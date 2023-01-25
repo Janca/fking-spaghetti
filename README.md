@@ -47,5 +47,14 @@ Each proxy should be on its own like, with the port number appended to it.
 19.123.223.125:8080
 ```
 
-## Example
+## UI Example
+A few examples of the UI on Windows 11.
+
+**Idle**
+
 ![A preview image of the UI](/.github/ui-1.png)
+
+
+**Busy**
+
+![A preview image of the UI busy](/.github/ui-2.png)

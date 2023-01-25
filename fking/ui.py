@@ -304,11 +304,10 @@ _spacer.pack(side=tkinter.LEFT, padx=3)
 def __do_status_bar_updates():
     images_downloaded = context.images_downloaded
     image_queue_size = context.total_queued_images
+
     _image_queue_status_var.set(f"{images_downloaded:,}/{image_queue_size:,}")
     __set_progress(_progress_bar_download_queue, images_downloaded, image_queue_size)
-
-    if not context.interrupted and context.scraper_busy:
-        _tk.after(200, __do_status_bar_updates)
+    _tk.after(200, __do_status_bar_updates)
 
 
 def show_ui():
