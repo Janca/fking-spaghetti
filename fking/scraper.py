@@ -62,7 +62,7 @@ def scrape_search_term(search_term: str):
     current_page = 1
     attempts = 1
 
-    while current_page <= context.max_pages:
+    while current_page <= context.max_pages and not context.interrupted:
         scrape_results = scrape_page_for_images(search_term, current_page)
 
         if scrape_results == _ScrapeResult.INCOMPLETE:

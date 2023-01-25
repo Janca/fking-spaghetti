@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 import tkinter
 import tkinter.filedialog
@@ -29,15 +30,20 @@ def __normalize_path(path) -> str:
 
 
 def __update_ui_state(busy: bool = False):
-    global _is_busy
-
     state = tkinter.DISABLED
-    _is_busy = busy
 
     if context.is_ready and not busy:
         state = tkinter.NORMAL
 
-    _button_cancel.configure(state=state)
+    if busy:
+        _button_browse_search_term_list.configure(state=tkinter.DISABLED)
+        _button_browse_output_directory.configure(state=tkinter.DISABLED)
+        _button_cancel.configure(state=tkinter.NORMAL)
+    else:
+        _button_browse_search_term_list.configure(state=tkinter.NORMAL)
+        _button_browse_output_directory.configure(state=tkinter.NORMAL)
+        _button_cancel.configure(state=tkinter.DISABLED)
+
     _button_start.configure(state=state)
 
 
@@ -139,9 +145,15 @@ def __on_button_start():
         __update_ui_state(True)
         __set_status_text("Preparing search...")
 
+        context.reset(True)
+
+        __do_status_bar_updates()
         fking.queues.start_image_download_threads()
 
         for i, term in enumerate(context.search_terms, start=1):
+            if context.interrupted:
+                break
+
             __set_status_text(f"Searching '{term}'...")
 
             _search_term_status_var.set(f"{i}/{context.search_terms_length}")
@@ -149,14 +161,42 @@ def __on_button_start():
 
             fking.scraper.scrape_search_term(term)
 
-        __set_status_text("Searching complete... waiting on downloads")
+        context.scraper_busy = False
+        if not context.interrupted:
+            __set_status_text("Searching complete... waiting on downloads")
+            fking.queues.wait_on_image_download_threads()
+
+            __set_status_text("Ready")
+            __update_ui_state(False)
+
+    _scraping_thread = threading.Thread(target=do_scrape, daemon=True)
+    _scraping_thread.start()
+
+
+def __on_button_cancel():
+    if not context.is_ready or not context.scraper_busy:
+        return
+
+    _button_cancel.configure(state=tkinter.DISABLED)
+
+    __set_status_text("Stopping threads... please wait...")
+    context.interrupted = True
+
+    def do_stop():
         fking.queues.wait_on_image_download_threads()
 
         __set_status_text("Ready")
         __update_ui_state(False)
 
-    _scraping_thread = threading.Thread(target=do_scrape)
-    _scraping_thread.start()
+    threading.Thread(target=do_stop, daemon=True).start()
+
+
+def __do_request_exit(*args):
+    if context.scraper_busy:
+        return
+
+    _tk.destroy()
+    sys.exit()
 
 
 def __set_status_text(text: Optional[str] = None):
@@ -165,6 +205,8 @@ def __set_status_text(text: Optional[str] = None):
     else:
         _status_var.set('')
 
+
+_tk.protocol("WM_DELETE_WINDOW", __do_request_exit)
 
 _frame_textfield_2 = tkinter.Frame(_frame, background="#a0a0a0", borderwidth=1)
 _textfield_input_search_terms = tkinter.Entry(_frame_textfield_2, justify=tkinter.LEFT, relief=tkinter.FLAT, width=64)
@@ -252,7 +294,7 @@ _frame_action_buttons.grid(row=9, column=0, columnspan=2, sticky=tkinter.NSEW)
 _button_start = tkinter.Button(_frame_action_buttons, text="Start", command=__on_button_start)
 _button_start.pack(side=tkinter.RIGHT, expand=True, fill=tkinter.X)
 
-_button_cancel = tkinter.Button(_frame_action_buttons, text="Cancel")
+_button_cancel = tkinter.Button(_frame_action_buttons, text="Cancel", command=__on_button_cancel)
 _button_cancel.pack(side=tkinter.LEFT, expand=True, fill=tkinter.X)
 
 _spacer = tkinter.Frame(_frame_action_buttons)
@@ -265,13 +307,12 @@ def __do_status_bar_updates():
     _image_queue_status_var.set(f"{images_downloaded:,}/{image_queue_size:,}")
     __set_progress(_progress_bar_download_queue, images_downloaded, image_queue_size)
 
-    _tk.after(200, __do_status_bar_updates)
+    if not context.interrupted and context.scraper_busy:
+        _tk.after(200, __do_status_bar_updates)
 
 
 def show_ui():
     __set_status_text("Ready")
     __update_ui_state()
-
-    __do_status_bar_updates()
 
     _tk.mainloop()

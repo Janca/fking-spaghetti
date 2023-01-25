@@ -58,7 +58,7 @@ class DownloadImageTask(ITask):
         sanitized_dirname = fking.utils.sanitize_dirname(self.search_term)
         normalized_alt_text = fking.utils.normalize_alt_text(self.alt_text)
 
-        if not normalized_alt_text or fking.utils.contains_partial(normalized_alt_text, self.search_term):
+        if not normalized_alt_text or not fking.utils.contains_partial(normalized_alt_text, self.search_term):
             output_dirpath = os.path.join(context.output_mismatched_captions, sanitized_dirname)
         else:
             output_dirpath = os.path.join(context.output_matching_captions, sanitized_dirname)
@@ -75,9 +75,6 @@ class DownloadImageTask(ITask):
         text_filepath = os.path.join(output_dirpath, text_filename)
         fking.utils.write_text(text_filepath, normalized_alt_text)
 
-
-_image_download_queue_active = False
-_thread_count_image_download: int = 10
 
 _queue_image_download: queue.Queue[DownloadImageTask] = queue.Queue(maxsize=10_000)
 _threads_image_download: list[threading.Thread] = []
@@ -116,22 +113,25 @@ def _process_queue_thread_fn(
 
 
 def start_image_download_threads():
-    global _image_download_queue_active, _threads_image_download
+    global _threads_image_download
 
-    current_threads = len(_threads_image_download)
-    diff = _thread_count_image_download - current_threads
+    active_threads = [thread for thread in _threads_image_download if thread.is_alive()]
+    active_thread_count = len(active_threads)
+
+    _threads_image_download = active_threads
+    diff = context.max_threads - active_thread_count
+
+    _queue_image_download.queue.clear()
 
     if diff > 0:
-        _image_download_queue_active = True
-
         for i in range(diff):
             thread_target = _process_queue_thread_fn(
                     _queue_image_download,
-                    lambda: _image_download_queue_active,
+                    lambda: context.scraper_busy or not _queue_image_download.empty(),
                     lambda success: context.increment_images_download()
             )
 
-            thread = threading.Thread(target=thread_target)
+            thread = threading.Thread(target=thread_target, daemon=True)
             _threads_image_download.append(thread)
 
             thread.start()

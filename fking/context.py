@@ -14,7 +14,12 @@ class _FkContext:
     _images_downloaded: int = 0
     total_queued_images = 0
 
+    max_threads = 10
+
     _mutex: Lock = Lock()
+
+    scraper_busy: bool = False
+    interrupted: bool = False
 
     max_attempts = 5
     max_pages = 4
@@ -36,6 +41,12 @@ class _FkContext:
         with self._mutex:
             value = self._images_downloaded
             self._images_downloaded = value + v
+
+    def reset(self, busy: bool = False):
+        self.scraper_busy = busy
+        self.interrupted = False
+        self._images_downloaded = 0
+        self.total_queued_images = 0
 
 
 context = _FkContext()
