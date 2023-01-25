@@ -1,7 +1,7 @@
 # fking-spaghetti
 **A fking bulk image downloader**
 
-A small UI to bulk download images from a site similar to `spaghetti.com`. This is for educational purposes only 
+A small UI to bulk download images from a site similar to `spaghettiimages.com`. This is for educational purposes only 
 and should not be used in commercial products.
 
 This project was original based on [saftle's repo](https://github.com/saftle/getty_images_thumbnail_scraper).
@@ -27,7 +27,9 @@ Well, it works... there are some bugs for sure. Need to go through it once more.
 be stopped currently, and exiting the UI while it is busy is sure the keep the process running.
 All that being said, it will work.
 
-### Hidden Features (For those that don't read the code)
+## Hidden Features
+**(For those that don't read the code)**
+
 Putting a file called `proxies.txt` next to the `main.py` file, you can instruct the scraper to use
 proxies for each call, rotating through each. Automatically blacklisting ones that do not work with a cooldown.
 Each proxy should be on its own like, with the port number appended to it.
