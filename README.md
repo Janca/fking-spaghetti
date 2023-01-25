@@ -7,6 +7,8 @@ and should not be used in commercial products.
 This project was original based on [saftle's repo](https://github.com/saftle/getty_images_thumbnail_scraper).
 Thanks for the ideas, and the back and forth concepts.
 
+See the [pretty UI here](#ui-example).
+
 ## How to use
 Clone git repo and run main.
 ```commandline
