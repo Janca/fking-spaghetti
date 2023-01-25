@@ -127,7 +127,7 @@ def start_image_download_threads():
         for i in range(diff):
             thread_target = _process_queue_thread_fn(
                     _queue_image_download,
-                    lambda: context.scraper_busy or not _queue_image_download.empty(),
+                    lambda: not context.interrupted and (context.scraper_busy or not _queue_image_download.empty()),
                     lambda success: context.increment_images_download()
             )
 

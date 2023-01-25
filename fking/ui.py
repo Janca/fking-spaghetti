@@ -185,7 +185,7 @@ def __on_button_cancel():
     def do_stop():
         fking.queues.wait_on_image_download_threads()
 
-        __set_status_text("Ready")
+        __set_status_text("Cancelled... Ready...")
         __update_ui_state(False)
 
     threading.Thread(target=do_stop, daemon=True).start()
