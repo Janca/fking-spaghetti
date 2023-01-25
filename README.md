@@ -1,7 +1,7 @@
 # fking-spaghetti
 **A fking bulk image downloader**
 
-A small UI to bulk download images from a site similar to `spaghettiimages.com`. This is for educational purposes only 
+A small UI to bulk download thumbnail images from `gettyimages.com` by search term. This is for educational purposes only 
 and should not be used in commercial products.
 
 This project was original based on [saftle's repo](https://github.com/saftle/getty_images_thumbnail_scraper).
