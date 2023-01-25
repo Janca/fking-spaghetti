@@ -27,7 +27,9 @@ Well, it works... there are some bugs for sure. Need to go through it once more.
 be stopped currently, and exiting the UI while it is busy is sure the keep the process running.
 All that being said, it will work.
 
-### Hidden Features (For those that don't read the code)
+## Hidden Features
+**(For those that don't read the code)**
+
 Putting a file called `proxies.txt` next to the `main.py` file, you can instruct the scraper to use
 proxies for each call, rotating through each. Automatically blacklisting ones that do not work with a cooldown.
 Each proxy should be on its own like, with the port number appended to it.
