@@ -23,9 +23,16 @@ palm trees
 ```
 
 ## Status
-Well, it works... there are some bugs for sure. Need to go through it once more. Pretty sure it cannot
-be stopped currently, and exiting the UI while it is busy is sure the keep the process running.
-All that being said, it will work.
+Well, it works... there are some bugs for sure. A major rewrite is in the near future, but I like to get the idea working,
+and then fix... maybe. Please open issues for any bug you may find, and check back often.
+
+### Feature Ideas
+
+- Automatically crop on subject
+- Automatically resize crops to standard SD sizes, i.e, `512x512` and `768x768`
+- Write search term list directly from within UI
+- Network/proxy manager from within the UI
+- Preferences for number of search pages, number of threads
 
 ## Hidden Features
 **(For those that don't read the code)**
