@@ -2,7 +2,7 @@ import math
 import tkinter.ttk
 from typing import Callable
 
-import fking.widgets
+import fking.legacy.widgets
 
 
 class _SpaghettiComponents:
@@ -133,7 +133,7 @@ class _SpaghettiComponents:
         )
 
         for t in test:
-            test_label.window_create(tkinter.INSERT, window=fking.widgets.toggle_button(test_label, text=t))
+            test_label.window_create(tkinter.INSERT, window=fking.legacy.widgets.toggle_button(test_label, text=t))
 
         test_frame.grid(row=7, column=0, sticky=tkinter.NSEW)
         # self.__layout_getty_widgets(frame)
@@ -142,15 +142,15 @@ class _SpaghettiComponents:
         tkinter.ttk.Label(frame, text="Search Query List", justify=tkinter.LEFT).grid(row=0, column=0, sticky=tkinter.W)
         self._frame_search_queries_path.grid(row=1, column=0, sticky=tkinter.NSEW)
         self._entry_search_queries_path.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
-        fking.widgets.x_spacer(self._frame_search_queries_path, 3).pack(side=tkinter.LEFT)
+        fking.legacy.widgets.x_spacer(self._frame_search_queries_path, 3).pack(side=tkinter.LEFT)
         self._button_browse_queries_path.pack(side=tkinter.LEFT, fill=tkinter.Y, expand=True)
 
-        fking.widgets.y_spacer(frame, 3).grid(row=2, column=0)
+        fking.legacy.widgets.y_spacer(frame, 3).grid(row=2, column=0)
 
         tkinter.ttk.Label(frame, text="Download Location", justify=tkinter.LEFT).grid(row=3, column=0, sticky=tkinter.W)
         self._frame_download_directory_path.grid(row=4, column=0, sticky=tkinter.NSEW)
         self._entry_download_directory_path.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
-        fking.widgets.x_spacer(self._frame_download_directory_path, 3).pack(side=tkinter.LEFT)
+        fking.legacy.widgets.x_spacer(self._frame_download_directory_path, 3).pack(side=tkinter.LEFT)
         self._button_browse_download_directory.pack(side=tkinter.LEFT, fill=tkinter.Y, expand=True)
 
     def __layout_pref_widgets(self, frame: tkinter.Frame):
@@ -254,7 +254,7 @@ class _SpaghettiComponents:
             for col in range(columns):
                 if o_idx >= len(labels):
                     break
-                fking.widgets.toggle_button(
+                fking.legacy.widgets.toggle_button(
                         center_wrapper,
                         text=labels[o_idx],
                         target=target

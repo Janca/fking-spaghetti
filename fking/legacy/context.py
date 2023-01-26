@@ -2,7 +2,7 @@ import os
 from threading import Lock
 from typing import Optional
 
-import fking.utils
+import fking.legacy.utils
 
 
 class _FkContext:
@@ -41,7 +41,7 @@ class _FkContext:
             return self._images_downloaded
 
     def update_directories(self, output_directory: str):
-        self.output_directory = fking.utils.normalize_path(output_directory)
+        self.output_directory = fking.legacy.utils.normalize_path(output_directory)
         self.output_matching_captions = os.path.join(context.output_directory, "raw")
         self.output_mismatched_captions = os.path.join(context.output_matching_captions, "__erroneous")
         self.output_focals = os.path.join(context.output_directory, "focals")

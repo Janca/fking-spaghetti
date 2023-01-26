@@ -1,6 +1,6 @@
 import tkinter
 
-from fking.ui2 import components
+from fking.legacy.ui2 import components
 
 tk = tkinter.Tk()
 components.initialize_components(tk)

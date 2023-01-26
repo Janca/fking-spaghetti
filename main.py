@@ -1,5 +1,4 @@
-import fking.ui
-import fking.proxies
+import fking.legacy.proxies
 
-fking.proxies.load_proxies()
-fking.ui.show_ui()
+fking.legacy.proxies.load_proxies()
+fking.legacy.ui.show_ui()

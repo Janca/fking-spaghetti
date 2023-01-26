@@ -7,12 +7,12 @@ import tkinter.messagebox
 import tkinter.ttk
 from typing import Optional
 
-import fking.context
-import fking.queues
-import fking.scraper
-import fking.utils
+import fking.legacy.context
+import fking.legacy.queues
+import fking.legacy.scraper
+import fking.legacy.utils
 
-from fking.context import context
+from fking.legacy.context import context
 
 _tk = tkinter.Tk()
 
@@ -85,7 +85,7 @@ def __on_browse_output_directory():
         if existing_files:
             dst_directory = os.path.join(dst_directory, "spaghetti_output")
 
-        dst_directory = fking.utils.normalize_path(dst_directory)
+        dst_directory = fking.legacy.utils.normalize_path(dst_directory)
 
         __set_entry_text(_textfield_output_directory, dst_directory)
         context.update_directories(dst_directory)
@@ -105,7 +105,7 @@ def __on_browse_search_terms_list():
     __set_status_text("Loading search term list...")
 
     if search_terms_path:
-        context.search_terms_path = fking.utils.normalize_path(search_terms_path)
+        context.search_terms_path = fking.legacy.utils.normalize_path(search_terms_path)
         __set_entry_text(_textfield_input_search_terms, search_terms_path)
 
         with open(search_terms_path, 'r') as f:
@@ -138,7 +138,7 @@ def __on_button_start():
         context.reset(True)
 
         __do_status_bar_updates()
-        fking.queues.start_image_download_threads()
+        fking.legacy.queues.start_image_download_threads()
 
         for i, term in enumerate(context.search_terms, start=1):
             if context.interrupted:
@@ -149,12 +149,12 @@ def __on_button_start():
             _search_term_status_var.set(f"{i}/{context.search_terms_length}")
             __set_progress(_progress_bar_search_term_list, i, context.search_terms_length)
 
-            fking.scraper.scrape_search_term(term)
+            fking.legacy.scraper.scrape_search_term(term)
 
         context.scraper_busy = False
         if not context.interrupted:
             __set_status_text("Searching complete... waiting on downloads")
-            fking.queues.wait_on_image_download_threads()
+            fking.legacy.queues.wait_on_image_download_threads()
 
             __set_status_text("Ready")
             __update_ui_state(False)
@@ -173,7 +173,7 @@ def __on_button_cancel():
     context.interrupted = True
 
     def do_stop():
-        fking.queues.wait_on_image_download_threads()
+        fking.legacy.queues.wait_on_image_download_threads()
 
         __set_status_text("Cancelled... Ready...")
         __update_ui_state(False)

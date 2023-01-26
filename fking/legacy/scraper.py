@@ -4,9 +4,9 @@ from enum import Enum
 import bs4
 import requests
 
-import fking.proxies
-import fking.queues
-from fking.context import context
+import fking.legacy.proxies
+import fking.legacy.queues
+from fking.legacy.context import context
 
 _user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 " \
               "Safari/537.3"
@@ -21,7 +21,7 @@ class _ScrapeResult(Enum):
 
 
 def scrape_page_for_images(search_term: str, page_number):
-    next_proxy = fking.proxies.next_best_proxy()
+    next_proxy = fking.legacy.proxies.next_best_proxy()
 
     try:
         url = __search_url(search_term, page_number)
@@ -43,7 +43,7 @@ def scrape_page_for_images(search_term: str, page_number):
                 image_url = gallery_image["src"]
                 image_alt_text = gallery_image["alt"]
 
-                fking.queues.queue_image_download(search_term, image_url, image_alt_text)
+                fking.legacy.queues.queue_image_download(search_term, image_url, image_alt_text)
 
         next_button_class = "PaginationRow-module__button___QQbMu PaginationRow-module__nextButton___gH3HZ"
         next_button = document_soup.find("button", {"class": next_button_class})
@@ -54,7 +54,7 @@ def scrape_page_for_images(search_term: str, page_number):
             return _ScrapeResult.COMPLETE
 
     except:
-        fking.proxies.mark_bad_proxy(next_proxy)
+        fking.legacy.proxies.mark_bad_proxy(next_proxy)
         return _ScrapeResult.ERROR
 
 
