@@ -1,5 +1,8 @@
+import os
 from threading import Lock
 from typing import Optional
+
+import fking.utils
 
 
 class _FkContext:
@@ -36,6 +39,12 @@ class _FkContext:
     def images_downloaded(self):
         with self._mutex:
             return self._images_downloaded
+
+    def update_directories(self, output_directory: str):
+        self.output_directory = fking.utils.normalize_path(output_directory)
+        self.output_matching_captions = os.path.join(context.output_directory, "raw")
+        self.output_mismatched_captions = os.path.join(context.output_matching_captions, "__erroneous")
+        self.output_focals = os.path.join(context.output_directory, "focals")
 
     def increment_images_download(self, v: int = 1):
         with self._mutex:

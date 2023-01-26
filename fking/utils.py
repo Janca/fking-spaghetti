@@ -1,4 +1,10 @@
 import hashlib
+import os
+
+
+def normalize_path(path) -> str:
+    path = os.path.abspath(path)
+    return path.replace("\\", '/')
 
 
 def normalize_tags(tags: str) -> str:

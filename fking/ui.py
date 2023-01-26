@@ -10,6 +10,8 @@ from typing import Optional
 import fking.context
 import fking.queues
 import fking.scraper
+import fking.utils
+
 from fking.context import context
 
 _tk = tkinter.Tk()
@@ -22,11 +24,6 @@ _frame.pack(side=tkinter.TOP, expand=True, fill=tkinter.BOTH)
 
 _is_busy = False
 _scraping_thread: Optional[threading.Thread] = None
-
-
-def __normalize_path(path) -> str:
-    path = os.path.abspath(path)
-    return path.replace("\\", '/')
 
 
 def __update_ui_state(busy: bool = False):
@@ -45,13 +42,6 @@ def __update_ui_state(busy: bool = False):
         _button_cancel.configure(state=tkinter.DISABLED)
 
     _button_start.configure(state=state)
-
-
-def __update_directories(out: str):
-    context.output_directory = out
-    context.output_matching_captions = os.path.join(context.output_directory, "raw")
-    context.output_mismatched_captions = os.path.join(context.output_matching_captions, "__erroneous")
-    context.output_focals = os.path.join(context.output_directory, "focals")
 
 
 def __create_directories():
@@ -95,10 +85,10 @@ def __on_browse_output_directory():
         if existing_files:
             dst_directory = os.path.join(dst_directory, "spaghetti_output")
 
-        dst_directory = __normalize_path(dst_directory)
+        dst_directory = fking.utils.normalize_path(dst_directory)
 
         __set_entry_text(_textfield_output_directory, dst_directory)
-        __update_directories(dst_directory)
+        context.update_directories(dst_directory)
         __update_ui_state()
 
     __set_status_text("Ready")
@@ -115,7 +105,7 @@ def __on_browse_search_terms_list():
     __set_status_text("Loading search term list...")
 
     if search_terms_path:
-        context.search_terms_path = __normalize_path(search_terms_path)
+        context.search_terms_path = fking.utils.normalize_path(search_terms_path)
         __set_entry_text(_textfield_input_search_terms, search_terms_path)
 
         with open(search_terms_path, 'r') as f:
