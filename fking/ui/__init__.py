@@ -1,4 +1,4 @@
-from fking.ui._eventbus import bind, start_tkinter_event_bus, process_queue, fire, unbind
+from fking.eventbus import bind, start_tkinter_event_bus, process_queue, fire, unbind
 from fking.ui.primary import show
 
 __all__ = [

@@ -44,7 +44,7 @@ def process_queue():
                 try:
                     listener(*args, **kwargs)
                 except Exception as e:
-                    fire("<EventException>", event, e)
+                    fire("<<EventException>>", event, e)
 
 
 def start_tkinter_event_bus(tk: _tk.Misc):
