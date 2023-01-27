@@ -1,15 +1,20 @@
 import os
 import time
-from typing import Optional, Union
+from typing import Optional as _Optional, Union as _Union
 
 _proxy_timeout = 120_000
 _proxy_path = os.path.abspath("./proxies.txt")
+
 _proxies: dict[str, float] = {}
 _proxies_timeout: dict[str, float] = {}
 
 
-def load_proxies():
-    global _proxies
+def load_proxies(path: _Optional[str] = None) -> list[str]:
+    global _proxies, _proxy_path
+
+    if path:
+        _proxy_path = path
+
     if os.path.isfile(_proxy_path):
         with open(_proxy_path, 'r') as f:
             proxies = f.read().splitlines()
@@ -20,20 +25,20 @@ def load_proxies():
                 if key and key not in _proxies:
                     _proxies[key] = -1
 
-    print(f"Loaded {len(_proxies)} proxies...")
+    return list(_proxies.keys())
 
 
-def next_best_proxy() -> Optional[dict[str, str]]:
+def next_proxy() -> _Optional[dict[str, str]]:
     global _proxies
 
-    if len(_proxies_timeout) <= 0:
+    if len(_proxies) <= 0:
         return None
 
     best_timeout: float = -1
-    best_proxy: Optional[str] = None
+    best_proxy: _Optional[str] = None
 
     time_now = time.time()
-    for proxy, timeout in _proxies_timeout.items():
+    for proxy, timeout in _proxies.items():
         if proxy in _proxies_timeout:
             bad_timeout = _proxies_timeout[proxy]
             diff = time_now - bad_timeout
@@ -52,7 +57,7 @@ def next_best_proxy() -> Optional[dict[str, str]]:
     if best_proxy is None:
         return None
 
-    _proxies_timeout[best_proxy] = time.time()
+    _proxies[best_proxy] = time.time()
 
     return {
         'http': best_proxy,
@@ -60,13 +65,13 @@ def next_best_proxy() -> Optional[dict[str, str]]:
     }
 
 
-def mark_bad_proxy(proxy: Optional[Union[dict[str, str], str]]):
+def mark_bad_proxy(proxy: _Optional[_Union[dict[str, str], str]]):
     global _proxies_timeout
 
     if proxy is None:
         return
 
     if not isinstance(proxy, str):
-        mark_bad_proxy(proxy['http'])
-    else:
-        _proxies_timeout[proxy] = time.time()
+        proxy = proxy["http"]
+
+    _proxies_timeout[proxy] = time.time()

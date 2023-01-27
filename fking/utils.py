@@ -1,5 +1,6 @@
 import hashlib
 import os
+import warnings
 
 
 def normalize_path(path) -> str:
@@ -31,6 +32,7 @@ def sanitize_dirname(name: str) -> str:
 
 
 def normalize_alt_text(alt_text: str) -> str:
+    warnings.warn(f"method {__name__} deprecated", DeprecationWarning)
     tags_text = alt_text
     if " - " in alt_text and ("stock picture" in alt_text or "royalty-free" in alt_text):
         _alt_text = alt_text[:alt_text.rindex(" - ")].strip()

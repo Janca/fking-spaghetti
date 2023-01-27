@@ -2,7 +2,7 @@ import sys
 import tkinter as _tk
 import tkinter.ttk as _ttk
 from tkinter.ttk import Frame
-from typing import Callable, Optional, Union, TypeVar
+from typing import Callable, Optional, TypeVar, Union
 
 import fking.utils
 
@@ -21,7 +21,7 @@ def create_browse_widget_group(
 ) -> tuple[_tk.Frame, _tk.StringVar, Callable[[Union[_tk.NORMAL, _tk.DISABLED]], None]]:
     wrapper = _ttk.Frame(parent)
 
-    str_var = _tk.StringVar()
+    str_var = _tk.StringVar(wrapper)
     str_var_set_fn = str_var.set
 
     entry_path = _ttk.Entry(wrapper, textvariable=str_var)
@@ -69,21 +69,21 @@ def create_progress_widget_group(
     frame_labels = _ttk.Frame(wrapper)
 
     label = _ttk.Label(
-        frame_labels,
-        text=label_text if is_str_label else None,
-        textvariable=label_text if not is_str_label else None,
-        justify=_tk.LEFT,
-        anchor=_tk.W
+            frame_labels,
+            text=label_text if is_str_label else None,
+            textvariable=label_text if not is_str_label else None,
+            justify=_tk.LEFT,
+            anchor=_tk.W
     )
 
     progressbar = _ttk.Progressbar(wrapper, **kwargs)
-    progressbar.str_var_stats = _tk.StringVar()
+    progressbar.str_var_stats = _tk.StringVar(wrapper)
 
     label_progress_stats = _ttk.Label(
-        frame_labels,
-        textvariable=progressbar.str_var_stats,
-        justify=_tk.RIGHT,
-        anchor=_tk.E
+            frame_labels,
+            textvariable=progressbar.str_var_stats,
+            justify=_tk.RIGHT,
+            anchor=_tk.E
     )
 
     progressbar.str_var_stats.set("0/0")

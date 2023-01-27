@@ -3,6 +3,8 @@ import os.path
 import tkinter as _tk
 import tkinter.ttk as _ttk
 
+import fking.app as _fkapp
+import fking.scrapers as _fkscrapers
 import fking.ui
 import fking.ui.frames as _fkframes
 import fking.ui.widgets as _fkwidgets
@@ -46,13 +48,40 @@ def show():
     _fkwidgets.subscribe_to_tk_var(str_var_queries_list_path, lambda _: update_ui_state())
     _fkwidgets.subscribe_to_tk_var(str_var_download_directory, lambda dirpath: validate_download_directory(dirpath))
 
-    frame_primary_settings.grid(row=0, column=0, sticky=_tk.NSEW, pady=(0, 3))
+    frame_primary_settings.grid(row=0, column=0, sticky=_tk.NSEW)
+    _ttk.Separator(tk_frame, orient=_tk.HORIZONTAL).grid(row=1, column=0, sticky=_tk.NSEW, pady=9)
     # =================
     # End of Primary Frame
     #
+    # Source selector
+    frame_source_selector, str_var_source = _fkframes.create_source_selector_frame(tk_frame)
+    frame_source_settings = _ttk.Frame(tk_frame)
+
+    def show_scraper_settings(key: str):
+        if key == _fkapp.context.active_scraper_name:
+            return
+
+        next_scraper = _fkscrapers.get(key)
+        _fkapp.context.active_scraper = next_scraper
+
+        tkinter_ui = next_scraper.tkinter_settings(frame_source_settings)
+
+        if tkinter_ui:
+            _ttk.Frame(frame_source_settings).pack(side=_tk.TOP, expand=True, fill=_tk.X, pady=9)
+            _ttk.Separator(frame_source_settings, orient=_tk.HORIZONTAL).pack(side=_tk.TOP, expand=True, fill=_tk.X)
+            _ttk.Frame(frame_source_settings).pack(side=_tk.TOP, expand=True, fill=_tk.X, pady=3)
+            tkinter_ui.pack(side=_tk.TOP, expand=True, fill=_tk.BOTH, pady=3)
+
+    _fkwidgets.subscribe_to_tk_var(str_var_source, lambda key: show_scraper_settings(key))
+
+    frame_source_selector.grid(row=2, column=0, sticky=_tk.NSEW)
+    frame_source_settings.grid(row=3, column=0, sticky=_tk.NSEW)
+    # End of source selector
+    #
     # Push All Content to Bottom on Resize
-    tk_frame.grid_rowconfigure(1, minsize=0, weight=1)
-    _ttk.Frame(tk_frame).grid(row=1, column=0, sticky=_tk.NSEW)
+    tk_frame.grid_rowconfigure(4, minsize=9, weight=1)
+    _ttk.Frame(tk_frame).grid(row=4, column=0, sticky=_tk.NSEW)
+    _ttk.Separator(tk_frame, orient=_tk.HORIZONTAL).grid(row=5, column=0, sticky=_tk.NSEW, pady=6)
     # =================
     # End of Content Push
     #
@@ -83,7 +112,7 @@ def show():
     fking.ui.bind("<<SearchTermComplete>>", increment_search_terms)
     fking.ui.bind("<<SearchTermAdded>>", increment_search_terms_total)
 
-    frame_progress.grid(row=2, column=0, sticky=_tk.NSEW, pady=3)
+    frame_progress.grid(row=6, column=0, sticky=_tk.NSEW, pady=0)
     # =================
     # End of Progress Frame
     #
@@ -96,7 +125,8 @@ def show():
 
     button_cancel.pack(side=_tk.LEFT, anchor=_tk.W, fill=_tk.X, expand=True)
     button_start.pack(side=_tk.RIGHT, anchor=_tk.E, fill=_tk.X, expand=True)
-    frame_scraper_controls.grid(row=3, column=0, sticky=_tk.NSEW, pady=(6, 0))
+
+    frame_scraper_controls.grid(row=7, column=0, sticky=_tk.NSEW, pady=(6, 0))
     # =================
     # End of Scraper Controls
     #
