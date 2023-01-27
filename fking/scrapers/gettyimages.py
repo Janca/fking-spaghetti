@@ -1,6 +1,5 @@
 import tkinter as _tk
 import tkinter.ttk as _ttk
-import urllib.parse as _urllib_parse
 from typing import Optional
 
 import bs4 as _bs4
@@ -85,8 +84,8 @@ class GettyImages(_IScraper):
     def generate_query_url(self, search_term: str, page: int) -> str:
         sort_by = self._sort_by.lower().replace(' ', '')
 
-        url_term = ''.join([ch if ch.isalnum() else '-' if ch == ' ' else '' for ch in search_term])
-        phrase_term = _urllib_parse.quote(search_term)
+        url_term = _fkutils.kebab_case(search_term)
+        phrase_term = _fkutils.url_encode(search_term)
         url = f"https://www.gettyimages.com/photos/{url_term}" \
               f"?assettype=image" \
               f"&license=rf" \

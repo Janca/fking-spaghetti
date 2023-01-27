@@ -1,5 +1,6 @@
 import hashlib
 import os
+import urllib.parse
 import warnings
 
 
@@ -72,3 +73,11 @@ def write_text(dst: str, text: str):
 
 def sha256_str(s: str) -> str:
     return hashlib.sha256(s.encode()).hexdigest()
+
+
+def kebab_case(s: str) -> str:
+    return ''.join([ch if ch.isalnum() else '-' if ch == ' ' else '' for ch in s])
+
+
+def url_encode(s: str) -> str:
+    return urllib.parse.quote(s)
