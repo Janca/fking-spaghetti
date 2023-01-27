@@ -1,5 +1,6 @@
 import tkinter as _tk
 import tkinter.ttk as _ttk
+import urllib.parse as _urllib_parse
 from typing import Optional
 
 import bs4 as _bs4
@@ -13,6 +14,12 @@ from fking.scrapers.imagescraper import IScraper as _IScraper, \
 
 
 class GettyImages(_IScraper):
+    _sort_by_values = ["Best Match", "Newest", "Most Popular"]
+    _color_and_mood_values = ["All", "Black & White", "Bold", "Cool", "Dramatic", "Natural", "Vivid", "Warm"]
+
+    _sort_by = _sort_by_values[2]
+    _color_and_mood = _color_and_mood_values[0]
+
     def __init__(self) -> None:
         super().__init__("GettyImages")
 
@@ -76,32 +83,60 @@ class GettyImages(_IScraper):
             raise e
 
     def generate_query_url(self, search_term: str, page: int) -> str:
-        return f"https://www.gettyimages.com/photos/{search_term}" \
-               f"?assettype=image" \
-               f"&license=rf" \
-               f"&alloweduse=availableforalluses" \
-               f"&family=creative" \
-               f"&phrase={search_term}" \
-               f"&sort=mostpopular" \
-               f"&numberofpeople=none" \
-               f"&page={page}"
+        sort_by = self._sort_by.lower().replace(' ', '')
+
+        url_term = ''.join([ch if ch.isalnum() else '-' if ch == ' ' else '' for ch in search_term])
+        phrase_term = _urllib_parse.quote(search_term)
+        url = f"https://www.gettyimages.com/photos/{url_term}" \
+              f"?assettype=image" \
+              f"&license=rf" \
+              f"&alloweduse=availableforalluses" \
+              f"&family=creative" \
+              f"&phrase={phrase_term}" \
+              f"&sort={sort_by}" \
+              f"&numberofpeople=none" \
+              f"&page={page}"
+
+        color_and_mood = self._color_and_mood.lower()
+        if color_and_mood != 'all':
+            if color_and_mood == 'natural':
+                color_and_mood = 'neutral'
+            elif color_and_mood == 'bold':
+                color_and_mood = 'dramatic'
+            elif color_and_mood == 'dramatic':
+                color_and_mood = 'moody'
+            elif color_and_mood == 'black & white':
+                color_and_mood = 'bandw'
+            url += f"&mood={color_and_mood}"
+
+        return url
 
     def tkinter_settings(self, parent: _tk.Misc) -> Optional[_tk.Widget]:
         wrapper = _tk.Frame(parent)
         wrapper.grid_columnconfigure(0, weight=1)
 
-        sort_by = ["Best Match", "Newest", "Most Popular"]
-        color_and_mood = ["All", "Black & White", "Bold", "Cool", "Dramatic", "Natural", "Vivid", "Warm"]
+        combobox_sort_by = _ttk.Combobox(wrapper, justify=_tk.LEFT, values=self._sort_by_values, state="readonly")
+        combobox_color_and_mood = _ttk.Combobox(wrapper, justify=_tk.LEFT, values=self._color_and_mood_values,
+                                                state="readonly")
 
-        combobox_sort_by = _ttk.Combobox(wrapper, justify=_tk.LEFT, values=sort_by, state="readonly")
-
-        combobox_color_and_mood = _ttk.Combobox(wrapper, justify=_tk.LEFT, values=color_and_mood, state="readonly")
-
-        combobox_sort_by.current(0)
+        combobox_sort_by.current(2)
         combobox_color_and_mood.current(0)
 
         label_sort_by = _ttk.Label(wrapper, text="Sort By")
         label_color_and_mood = _ttk.Label(wrapper, text="Color & Mood")
+
+        def update_sort_by(*args):
+            current_idx = combobox_sort_by.current()
+            self._sort_by = self._sort_by_values[current_idx]
+
+        def update_mood(*args):
+            current_idx = combobox_color_and_mood.current()
+            self._color_and_mood = self._color_and_mood_values[current_idx]
+
+            print(self.generate_query_url("test term", 1))
+
+        combobox_sort_by.bind("<<ComboboxSelected>>", update_sort_by)
+        combobox_color_and_mood.bind("<<ComboboxSelected>>", update_mood)
 
         label_sort_by.grid(row=0, column=0, sticky=_tk.NSEW)
         combobox_sort_by.grid(row=1, column=0, sticky=_tk.NSEW, pady=(0, 3))
