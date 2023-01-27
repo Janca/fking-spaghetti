@@ -10,7 +10,7 @@ from typing import Optional
 import fking.legacy.context
 import fking.legacy.queues
 import fking.legacy.scraper
-import fking.legacy.utils
+import fking.utils
 
 from fking.legacy.context import context
 
@@ -85,7 +85,7 @@ def __on_browse_output_directory():
         if existing_files:
             dst_directory = os.path.join(dst_directory, "spaghetti_output")
 
-        dst_directory = fking.legacy.utils.normalize_path(dst_directory)
+        dst_directory = fking.utils.normalize_path(dst_directory)
 
         __set_entry_text(_textfield_output_directory, dst_directory)
         context.update_directories(dst_directory)
@@ -105,7 +105,7 @@ def __on_browse_search_terms_list():
     __set_status_text("Loading search term list...")
 
     if search_terms_path:
-        context.search_terms_path = fking.legacy.utils.normalize_path(search_terms_path)
+        context.search_terms_path = fking.utils.normalize_path(search_terms_path)
         __set_entry_text(_textfield_input_search_terms, search_terms_path)
 
         with open(search_terms_path, 'r') as f:

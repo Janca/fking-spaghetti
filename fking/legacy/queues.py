@@ -7,7 +7,7 @@ import requests
 
 import fking.legacy.proxies
 import fking.legacy.scraper
-import fking.legacy.utils
+import fking.utils
 from fking.legacy.context import context
 
 
@@ -55,25 +55,25 @@ class DownloadImageTask(ITask):
         if len(image_bytes) <= 0:
             return
 
-        sanitized_dirname = fking.legacy.utils.sanitize_dirname(self.search_term)
-        normalized_alt_text = fking.legacy.utils.normalize_alt_text(self.alt_text)
+        sanitized_dirname = fking.utils.sanitize_dirname(self.search_term)
+        normalized_alt_text = fking.utils.normalize_alt_text(self.alt_text)
 
-        if not normalized_alt_text or not fking.legacy.utils.contains_partial(normalized_alt_text, self.search_term):
+        if not normalized_alt_text or not fking.utils.contains_partial(normalized_alt_text, self.search_term):
             output_dirpath = os.path.join(context.output_mismatched_captions, sanitized_dirname)
         else:
             output_dirpath = os.path.join(context.output_matching_captions, sanitized_dirname)
 
         os.makedirs(output_dirpath, exist_ok=True)
-        hash_name = fking.legacy.utils.sha256_str(f"{sanitized_dirname}.{self.url}")
+        hash_name = fking.utils.sha256_str(f"{sanitized_dirname}.{self.url}")
 
         image_filename = f"{hash_name}.jpg"
         text_filename = f"{hash_name}.txt"
 
         image_dirpath = os.path.join(output_dirpath, image_filename)
-        fking.legacy.utils.write_binary(image_dirpath, image_bytes)
+        fking.utils.write_binary(image_dirpath, image_bytes)
 
         text_filepath = os.path.join(output_dirpath, text_filename)
-        fking.legacy.utils.write_text(text_filepath, normalized_alt_text)
+        fking.utils.write_text(text_filepath, normalized_alt_text)
 
 
 _queue_image_download: queue.Queue[DownloadImageTask] = queue.Queue(maxsize=10_000)
