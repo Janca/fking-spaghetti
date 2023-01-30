@@ -1,7 +1,7 @@
 import sys
 import tkinter as _tk
 import tkinter.ttk as _ttk
-from tkinter.ttk import Frame
+from abc import ABC as _ABC
 from typing import Callable, Optional, TypeVar, Union
 
 import fking.utils
@@ -11,6 +11,12 @@ PROGRESSBAR_STOP = -2
 PROGRESS_BAR_INDETERMINATE = -1
 
 _TK = TypeVar("_TK", _tk.Widget, _tk.Frame)
+
+
+class Toggle(_ttk.Button, _ABC):
+
+    def toggle(self, selected: bool):
+        raise NotImplementedError()
 
 
 def create_browse_widget_group(
@@ -62,28 +68,28 @@ def create_progress_widget_group(
         parent: _tk.Misc,
         label_text: Union[str, _tk.StringVar],
         **kwargs
-) -> tuple[Frame, Callable[[int, int], None]]:
+) -> tuple[_tk.Frame, Callable[[int, int], None]]:
     wrapper = _ttk.Frame(parent)
 
     is_str_label = isinstance(label_text, str)
     frame_labels = _ttk.Frame(wrapper)
 
     label = _ttk.Label(
-            frame_labels,
-            text=label_text if is_str_label else None,
-            textvariable=label_text if not is_str_label else None,
-            justify=_tk.LEFT,
-            anchor=_tk.W
+        frame_labels,
+        text=label_text if is_str_label else None,
+        textvariable=label_text if not is_str_label else None,
+        justify=_tk.LEFT,
+        anchor=_tk.W
     )
 
     progressbar = _ttk.Progressbar(wrapper, **kwargs)
     progressbar.str_var_stats = _tk.StringVar(wrapper)
 
     label_progress_stats = _ttk.Label(
-            frame_labels,
-            textvariable=progressbar.str_var_stats,
-            justify=_tk.RIGHT,
-            anchor=_tk.E
+        frame_labels,
+        textvariable=progressbar.str_var_stats,
+        justify=_tk.RIGHT,
+        anchor=_tk.E
     )
 
     progressbar.str_var_stats.set("0/0")
@@ -127,3 +133,54 @@ def set_entry_text(entry: _tk.Entry, text: Optional[str]):
 
 def subscribe_to_tk_var(tk_var: _tk.Variable, target: Callable[[any], None]):
     tk_var.trace_add("write", lambda name, index, mode, _tk_var=tk_var: target(_tk_var.get()))
+
+
+def section_divider(
+        parent: _tk.Misc,
+        padx: Union[str, float, tuple[Union[str, float], Union[str, float]]] = 0,
+        pady: Union[str, float, tuple[Union[str, float], Union[str, float]]] = 0
+) -> _tk.Widget:
+    wrapper = _ttk.Frame(parent)
+    wrapper.grid_columnconfigure(0, weight=1)
+    _ttk.Separator(wrapper, orient=_tk.HORIZONTAL).grid(row=0, column=0, padx=padx, pady=pady, sticky=_tk.NSEW)
+    return wrapper
+
+
+def x_flow_panel(parent: _tk.Misc) -> tuple[_tk.Frame, _tk.Text]:
+    parent_background = parent.cget("background")
+
+    wrapper = _ttk.Frame(parent)
+    x_flow = _tk.Text(
+        wrapper,
+        state=_tk.NORMAL,
+        background='blue',
+        selectbackground=parent_background,
+        padx=0, pady=0,
+        cursor="arrow",
+        relief=_tk.FLAT,
+        wrap=_tk.WORD
+    )
+
+    x_flow.pack(side=_tk.TOP, anchor=_tk.CENTER, fill=_tk.BOTH, expand=True)
+    return wrapper, x_flow
+
+
+def toggle_button(master, **kwargs) -> Toggle:
+    button = _ttk.Button(master, **kwargs)
+    button.toggled = False
+
+    def do_toggle(self: _ttk.Button):
+        self.toggled = not self.toggled
+        toggle(self, self.toggled)
+
+        return "break"
+
+    def toggle(self: _ttk.Button, selected: bool):
+        self.toggled = selected
+        self.state(["pressed" if selected else "!pressed"])
+
+    button.bind("<ButtonRelease-1>", lambda e: do_toggle(button))
+    button.toggle = toggle.__get__(button)
+
+    # noinspection PyTypeChecker
+    return button

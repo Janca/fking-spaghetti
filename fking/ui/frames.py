@@ -3,7 +3,7 @@ import tkinter.filedialog
 import tkinter.ttk as _ttk
 from typing import Callable, Union
 
-import fking.scrapers as _fkscrappers
+import fking.scrapers as _fkscrapers
 import fking.ui.widgets as _fkwidgets
 
 
@@ -57,7 +57,7 @@ def create_source_selector_frame(parent: _tk.Misc) -> tuple[_tk.Frame, _tk.Strin
     wrapper = _ttk.Frame(parent)
 
     str_var_scraper = _tk.StringVar(wrapper)
-    scraper_keys = list(_fkscrappers.get_all())
+    scraper_keys = list(_fkscrapers.get_all())
 
     label = _ttk.Label(wrapper, text="Source", justify=_tk.LEFT, anchor=_tk.W)
     combobox_source = _ttk.Combobox(

@@ -7,6 +7,7 @@ import requests as _requests
 
 import fking.app as _fkapp
 import fking.network as _fknetwork
+import fking.ui.widgets as _fkwidgets
 import fking.utils as _fkutils
 from fking.scrapers.imagescraper import IScraper as _IScraper, \
     ImageTask as _ImageTask
@@ -15,12 +16,13 @@ from fking.scrapers.imagescraper import IScraper as _IScraper, \
 class GettyImages(_IScraper):
     _sort_by_values = ["Best Match", "Newest", "Most Popular"]
     _color_and_mood_values = ["All", "Black & White", "Bold", "Cool", "Dramatic", "Natural", "Vivid", "Warm"]
+    _orientation_values = ["Vertical", "Horizontal", "Square", "Panoramic Horizontal", "Panoramic Vertical"]
 
     _sort_by = _sort_by_values[2]
     _color_and_mood = _color_and_mood_values[0]
 
     def __init__(self) -> None:
-        super().__init__("GettyImages")
+        super().__init__("Getty Images")
 
     def query(self, search_query: str, _page: int = 1, _current_length: int = 0) -> list[_ImageTask]:
         next_proxy = _fknetwork.next_proxy()
@@ -28,10 +30,10 @@ class GettyImages(_IScraper):
         try:
             url = self.generate_query_url(search_query, _page)
             response = _requests.get(
-                    url,
-                    headers=_fknetwork.default_headers,
-                    proxies=next_proxy,
-                    timeout=_fkapp.context.image_download_timeout
+                url,
+                headers=_fknetwork.default_headers,
+                proxies=next_proxy,
+                timeout=_fkapp.context.image_download_timeout
             )
 
             if response.status_code != 200:
@@ -124,6 +126,16 @@ class GettyImages(_IScraper):
         label_sort_by = _ttk.Label(wrapper, text="Sort By")
         label_color_and_mood = _ttk.Label(wrapper, text="Color & Mood")
 
+        frame_orientations_wrapper = _tk.Frame(wrapper)
+        frame_orientations, x_flow_orientations = _fkwidgets.x_flow_panel(frame_orientations_wrapper)
+        for orientation in self._orientation_values:
+            x_flow_orientations.window_create(
+                _tk.INSERT,
+                window=_fkwidgets.toggle_button(x_flow_orientations, text=orientation)
+            )
+
+        frame_orientations.pack(side=_tk.LEFT, anchor=_tk.W, fill=_tk.BOTH, expand=True)
+
         def update_sort_by(*args):
             current_idx = combobox_sort_by.current()
             self._sort_by = self._sort_by_values[current_idx]
@@ -132,8 +144,6 @@ class GettyImages(_IScraper):
             current_idx = combobox_color_and_mood.current()
             self._color_and_mood = self._color_and_mood_values[current_idx]
 
-            print(self.generate_query_url("test term", 1))
-
         combobox_sort_by.bind("<<ComboboxSelected>>", update_sort_by)
         combobox_color_and_mood.bind("<<ComboboxSelected>>", update_mood)
 
@@ -141,6 +151,9 @@ class GettyImages(_IScraper):
         combobox_sort_by.grid(row=1, column=0, sticky=_tk.NSEW, pady=(0, 3))
         label_color_and_mood.grid(row=2, column=0, sticky=_tk.NSEW, pady=(3, 0))
         combobox_color_and_mood.grid(row=3, column=0, sticky=_tk.NSEW)
+        _fkwidgets.section_divider(wrapper, pady=15).grid(row=4, column=0, sticky=_tk.NSEW)
+        wrapper.grid_rowconfigure(5, weight=0)
+        frame_orientations_wrapper.grid(row=5, column=0, sticky=_tk.EW)
 
         return wrapper
 

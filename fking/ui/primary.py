@@ -13,12 +13,13 @@ import fking.utils as _fkutils
 
 def show():
     tk = _tk.Tk()
+    tk.wm_maxsize(396, 900)
     fking.ui.start_tkinter_event_bus(tk)
 
     tk_frame = _ttk.Frame(tk, padding=9)
     tk_frame.pack(side=_tk.TOP, fill=_tk.BOTH, expand=True)
 
-    tk_frame.grid_columnconfigure(0, minsize=464, weight=1)
+    tk_frame.grid_columnconfigure(0, minsize=296, weight=1)
 
     #
     # Primary Frame
@@ -58,8 +59,17 @@ def show():
     frame_source_settings = _ttk.Frame(tk_frame)
 
     def show_scraper_settings(key: str):
+        nonlocal frame_source_settings
+
         if key == _fkapp.context.active_scraper_name:
             return
+
+        if _fkapp.context.active_scraper is not None:
+            print("Forgetting source settings grid")
+            frame_source_settings.destroy()
+
+            frame_source_settings = _ttk.Frame(tk_frame)
+            frame_source_settings.grid(row=3, column=0, sticky=_tk.NSEW)
 
         next_scraper = _fkscrapers.get(key)
         _fkapp.context.active_scraper = next_scraper
@@ -67,9 +77,11 @@ def show():
         tkinter_ui = next_scraper.tkinter_settings(frame_source_settings)
 
         if tkinter_ui:
-            _ttk.Frame(frame_source_settings).pack(side=_tk.TOP, expand=True, fill=_tk.X, pady=9)
-            _ttk.Separator(frame_source_settings, orient=_tk.HORIZONTAL).pack(side=_tk.TOP, expand=True, fill=_tk.X)
-            _ttk.Frame(frame_source_settings).pack(side=_tk.TOP, expand=True, fill=_tk.X, pady=3)
+            _ttk.Frame(frame_source_settings).pack(side=_tk.TOP, expand=True, fill=_tk.X, pady=(9, 0))
+            _fkwidgets.section_divider(frame_source_settings, pady=(9, 3)).pack(side=_tk.TOP, expand=True,
+                                                                                fill=_tk.BOTH)
+            # _ttk.Separator(frame_source_settings, orient=_tk.HORIZONTAL).pack(side=_tk.TOP, expand=True, fill=_tk.X)
+            _ttk.Frame(frame_source_settings).pack(side=_tk.TOP, expand=True, fill=_tk.X, pady=(0, 3))
             tkinter_ui.pack(side=_tk.TOP, expand=True, fill=_tk.BOTH, pady=3)
 
     _fkwidgets.subscribe_to_tk_var(str_var_source, lambda key: show_scraper_settings(key))
