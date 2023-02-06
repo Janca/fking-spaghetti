@@ -84,5 +84,5 @@ def __search_url(search_term: str, page_number: int) -> str:
            f"&family=creative" \
            f"&phrase={search_term}" \
            f"&sort=mostpopular" \
-           f"&numberofpeople=none" \
+           f"&numberofpeople=one" \
            f"&page={page_number}"

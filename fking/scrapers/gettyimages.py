@@ -1,4 +1,5 @@
 import tkinter as _tk
+import tkinter.simpledialog as _tksimpledialog
 import tkinter.ttk as _ttk
 from typing import Optional
 
@@ -15,8 +16,13 @@ from fking.scrapers.imagescraper import IScraper as _IScraper, \
 
 class GettyImages(_IScraper):
     _sort_by_values = ["Best Match", "Newest", "Most Popular"]
-    _color_and_mood_values = ["All", "Black & White", "Bold", "Cool", "Dramatic", "Natural", "Vivid", "Warm"]
+    _color_and_mood_values = ["Black & White", "Bold", "Cool", "Dramatic", "Natural", "Vivid", "Warm"]
     _orientation_values = ["Vertical", "Horizontal", "Square", "Panoramic Horizontal", "Panoramic Vertical"]
+    _style_values = [
+        "Abstract", "Close-up", "Cut Out",
+        "Copy Space", "Full Frame", "Macro",
+        "Portrait", "Sparse", "Still Life"
+    ]
 
     _sort_by = _sort_by_values[2]
     _color_and_mood = _color_and_mood_values[0]
@@ -99,16 +105,15 @@ class GettyImages(_IScraper):
               f"&page={page}"
 
         color_and_mood = self._color_and_mood.lower()
-        if color_and_mood != 'all':
-            if color_and_mood == 'natural':
-                color_and_mood = 'neutral'
-            elif color_and_mood == 'bold':
-                color_and_mood = 'dramatic'
-            elif color_and_mood == 'dramatic':
-                color_and_mood = 'moody'
-            elif color_and_mood == 'black & white':
-                color_and_mood = 'bandw'
-            url += f"&mood={color_and_mood}"
+        if color_and_mood == 'natural':
+            color_and_mood = 'neutral'
+        elif color_and_mood == 'bold':
+            color_and_mood = 'dramatic'
+        elif color_and_mood == 'dramatic':
+            color_and_mood = 'moody'
+        elif color_and_mood == 'black & white':
+            color_and_mood = 'bandw'
+        url += f"&mood={color_and_mood}"
 
         return url
 
@@ -127,13 +132,14 @@ class GettyImages(_IScraper):
         label_color_and_mood = _ttk.Label(wrapper, text="Color & Mood")
 
         frame_orientations_wrapper = _tk.Frame(wrapper)
-        frame_orientations, x_flow_orientations = _fkwidgets.x_flow_panel(frame_orientations_wrapper)
+        frame_orientations, x_flow_orientations = _fkwidgets.x_flow_panel(frame_orientations_wrapper, height=4)
         for orientation in self._orientation_values:
             x_flow_orientations.window_create(
                 _tk.INSERT,
                 window=_fkwidgets.toggle_button(x_flow_orientations, text=orientation)
             )
 
+        x_flow_orientations.bind("<MouseWheel>", lambda event: "break")
         frame_orientations.pack(side=_tk.LEFT, anchor=_tk.W, fill=_tk.BOTH, expand=True)
 
         def update_sort_by(*args):
@@ -151,11 +157,129 @@ class GettyImages(_IScraper):
         combobox_sort_by.grid(row=1, column=0, sticky=_tk.NSEW, pady=(0, 3))
         label_color_and_mood.grid(row=2, column=0, sticky=_tk.NSEW, pady=(3, 0))
         combobox_color_and_mood.grid(row=3, column=0, sticky=_tk.NSEW)
-        _fkwidgets.section_divider(wrapper, pady=15).grid(row=4, column=0, sticky=_tk.NSEW)
+
+        # _fkwidgets.section_divider(wrapper, pady=15).grid(row=4, column=0, sticky=_tk.NSEW)
+        label_orientations = _ttk.Label(wrapper, text="Orientations")
+        label_orientations.grid(row=4, column=0, sticky=_tk.NSEW, pady=(6, 0))
+
         wrapper.grid_rowconfigure(5, weight=0)
         frame_orientations_wrapper.grid(row=5, column=0, sticky=_tk.EW)
 
+        frame_styles_wrapper = _tk.Frame(wrapper)
+        frame_styles, x_flow_styles = _fkwidgets.x_flow_panel(frame_styles_wrapper, height=5)
+        for style in self._style_values:
+            x_flow_styles.window_create(
+                _tk.INSERT,
+                window=_fkwidgets.toggle_button(x_flow_styles, text=style)
+            )
+
+        x_flow_styles.bind("<MouseWheel>", lambda event: "break")
+        frame_styles.pack(side=_tk.LEFT, anchor=_tk.W, fill=_tk.BOTH, expand=True)
+
+        # _fkwidgets.section_divider(wrapper, pady=15).grid(row=6, column=0, sticky=_tk.NSEW)
+        label_styles = _ttk.Label(wrapper, text="Styles")
+        label_styles.grid(row=6, column=0, sticky=_tk.NSEW)
+
+        frame_styles_wrapper.grid(row=7, column=0, sticky=_tk.EW)
+
+        label_people = _ttk.Label(wrapper, text="People")
+        label_people.grid(row=8, column=0, sticky=_tk.NSEW)
+
+        frame_people_buttons = _ttk.Frame(wrapper)
+        frame_people_buttons.grid(row=9, column=0, sticky=_tk.NSEW)
+
+        button_no_people = _fkwidgets.toggle_button(
+            frame_people_buttons,
+            buttongroup="configure_people",
+            text="None"
+        )
+
+        button_no_people.toggle(True)
+        button_configure_people = _fkwidgets.toggle_button(
+            frame_people_buttons,
+            buttongroup="configure_people",
+            text="One or More"
+        )
+
+        def open_people_dialog():
+            if button_configure_people.toggled:
+                self._show_people_preferences_dialog(wrapper)
+
+        button_configure_people.bind("<<Selected>>", lambda e: open_people_dialog())
+
+        button_no_people.pack(side=_tk.LEFT, expand=True, fill=_tk.X)
+        button_configure_people.pack(side=_tk.LEFT, expand=True, fill=_tk.X)
+
         return wrapper
+
+    def _show_people_preferences_dialog(self, master: _tk.Misc):
+        class __PrefDialog(_tksimpledialog.Dialog):
+            _button_ok: _tk.Button
+
+            def __init__(self, parent) -> None:
+                super().__init__(parent)
+
+            def body(self, parent: _tk.Frame) -> _tk.Misc | None:
+                self.resizable(None, None)
+
+                parent.grid_columnconfigure(0, minsize=256, weight=0)
+
+                label_no_people = _ttk.Label(parent, text="Number of People")
+                label_no_people.grid(row=0, column=0, sticky=_tk.NSEW)
+
+                no_of_people_values = ["One Person", "Two People", "Group of People"]
+                frame_no_people_wrapper = _tk.Frame(parent)
+
+                for i, no_people in enumerate(no_of_people_values):
+                    btn = _fkwidgets.toggle_button(frame_no_people_wrapper, buttongroup="no_people", text=no_people)
+                    btn.pack(side=_tk.LEFT, fill=_tk.X, expand=True)
+
+                    if i == 0:
+                        btn.toggle(True)
+
+                frame_no_people_wrapper.grid(row=1, column=0, sticky=_tk.NSEW)
+
+                label_age = _ttk.Label(parent, text="Age")
+                label_age.grid(row=2, column=0, sticky=_tk.NSEW, pady=(6, 0))
+
+                age_values = [
+                    "Baby", "Child", "Teenager", "Young Adult",
+                    "Adult", "Adults Only", "Mature Adult",
+                    "Senior Adult"
+                ]
+
+                idx = 0
+                frame_age_wrapper = _tk.Frame(parent)
+                for row in range(3):
+                    frame_row = _tk.Frame(frame_age_wrapper)
+                    for column in range(3):
+                        if idx >= len(age_values):
+                            break
+
+                        age_txt = age_values[idx]
+                        idx += 1
+
+                        btn = _fkwidgets.toggle_button(frame_row, text=age_txt)
+                        btn.pack(side=_tk.LEFT, anchor=_tk.W, expand=True, fill=_tk.BOTH)
+
+                    frame_row.pack(side=_tk.TOP, expand=True, fill=_tk.X)
+
+                frame_age_wrapper.grid(row=3, column=0, sticky=_tk.NSEW)
+
+                return None
+
+            def buttonbox(self) -> None:
+                frame = _ttk.Frame(self)
+
+                self._button_ok = _ttk.Button(frame, text="OK", width=16, command=self.__on_ok_button)
+                self._button_ok.grid(row=0, column=1, padx=(3, 0), pady=(0, 6))
+
+                frame.pack(side=_tk.RIGHT, padx=6, pady=0)
+
+            def __on_ok_button(self):
+                self.destroy()
+
+        __PrefDialog(master)
 
     @staticmethod
     def _normalize_alt_text(alt_text: str) -> str:

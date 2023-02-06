@@ -25,7 +25,7 @@ class _FkContext:
     interrupted: bool = False
 
     max_attempts = 5
-    max_pages = 4
+    max_pages = 2
 
     @property
     def is_ready(self):

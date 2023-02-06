@@ -14,6 +14,7 @@ _TK = TypeVar("_TK", _tk.Widget, _tk.Frame)
 
 
 class Toggle(_ttk.Button, _ABC):
+    toggled: bool = False
 
     def toggle(self, selected: bool):
         raise NotImplementedError()
@@ -146,40 +147,57 @@ def section_divider(
     return wrapper
 
 
-def x_flow_panel(parent: _tk.Misc) -> tuple[_tk.Frame, _tk.Text]:
+def x_flow_panel(parent: _tk.Misc, **kwargs) -> tuple[_tk.Frame, _tk.Text]:
     parent_background = parent.cget("background")
 
     wrapper = _ttk.Frame(parent)
     x_flow = _tk.Text(
         wrapper,
-        state=_tk.NORMAL,
-        background='blue',
+        state=_tk.DISABLED,
+        background=parent_background,
         selectbackground=parent_background,
         padx=0, pady=0,
         cursor="arrow",
         relief=_tk.FLAT,
-        wrap=_tk.WORD
+        wrap=_tk.WORD,
+        **kwargs
     )
 
     x_flow.pack(side=_tk.TOP, anchor=_tk.CENTER, fill=_tk.BOTH, expand=True)
     return wrapper, x_flow
 
 
-def toggle_button(master, **kwargs) -> Toggle:
+def toggle_button(master: _tk.Misc, buttongroup: str = None, **kwargs) -> Toggle:
     button = _ttk.Button(master, **kwargs)
     button.toggled = False
 
-    def do_toggle(self: _ttk.Button):
-        self.toggled = not self.toggled
-        toggle(self, self.toggled)
+    if buttongroup:
+        if "buttongroups" not in master.__dict__:
+            master.buttongroups = {buttongroup: [button]}
+        elif buttongroup not in master.buttongroups:
+            master.buttongroups[buttongroup] = [button]
+        else:
+            master.buttongroups[buttongroup].append(button)
 
+    def do_toggle(*args):
+        toggled = not button.toggled
+        button.toggle(toggled)
+
+        if buttongroup:
+            bg_buttons = master.buttongroups[buttongroup]
+            for btn in bg_buttons:
+                if btn != button:
+                    toggle(btn, not toggled)
+                    btn.event_generate("<<Selected>>")
+
+        button.event_generate("<<Selected>>")
         return "break"
 
     def toggle(self: _ttk.Button, selected: bool):
         self.toggled = selected
         self.state(["pressed" if selected else "!pressed"])
 
-    button.bind("<ButtonRelease-1>", lambda e: do_toggle(button))
+    button.bind("<ButtonRelease-1>", do_toggle)
     button.toggle = toggle.__get__(button)
 
     # noinspection PyTypeChecker

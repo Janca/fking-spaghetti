@@ -1,5 +1,6 @@
 import datetime
 import os.path
+import sys
 import tkinter as _tk
 import tkinter.ttk as _ttk
 
@@ -13,13 +14,16 @@ import fking.utils as _fkutils
 
 def show():
     tk = _tk.Tk()
-    tk.wm_maxsize(396, 900)
+    tk.wm_maxsize(396, 4000)
+    tk.wm_minsize(396, 339)
+    tk.resizable(False, False)
+
     fking.ui.start_tkinter_event_bus(tk)
 
     tk_frame = _ttk.Frame(tk, padding=9)
     tk_frame.pack(side=_tk.TOP, fill=_tk.BOTH, expand=True)
 
-    tk_frame.grid_columnconfigure(0, minsize=296, weight=1)
+    tk_frame.grid_columnconfigure(0, minsize=378, weight=1)
 
     #
     # Primary Frame
@@ -91,7 +95,7 @@ def show():
     # End of source selector
     #
     # Push All Content to Bottom on Resize
-    tk_frame.grid_rowconfigure(4, minsize=9, weight=1)
+    tk_frame.grid_rowconfigure(4, minsize=0, weight=1)
     _ttk.Frame(tk_frame).grid(row=4, column=0, sticky=_tk.NSEW)
     _ttk.Separator(tk_frame, orient=_tk.HORIZONTAL).grid(row=5, column=0, sticky=_tk.NSEW, pady=6)
     # =================
@@ -146,4 +150,5 @@ def show():
     # Status Bar
     # =================
 
+    tk.after(2000, lambda: print(tk.winfo_geometry()))
     tk.mainloop()
