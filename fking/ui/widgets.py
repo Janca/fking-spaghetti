@@ -1,3 +1,4 @@
+import math
 import sys
 import tkinter as _tk
 import tkinter.ttk as _ttk
@@ -76,21 +77,21 @@ def create_progress_widget_group(
     frame_labels = _ttk.Frame(wrapper)
 
     label = _ttk.Label(
-        frame_labels,
-        text=label_text if is_str_label else None,
-        textvariable=label_text if not is_str_label else None,
-        justify=_tk.LEFT,
-        anchor=_tk.W
+            frame_labels,
+            text=label_text if is_str_label else None,
+            textvariable=label_text if not is_str_label else None,
+            justify=_tk.LEFT,
+            anchor=_tk.W
     )
 
     progressbar = _ttk.Progressbar(wrapper, **kwargs)
     progressbar.str_var_stats = _tk.StringVar(wrapper)
 
     label_progress_stats = _ttk.Label(
-        frame_labels,
-        textvariable=progressbar.str_var_stats,
-        justify=_tk.RIGHT,
-        anchor=_tk.E
+            frame_labels,
+            textvariable=progressbar.str_var_stats,
+            justify=_tk.RIGHT,
+            anchor=_tk.E
     )
 
     progressbar.str_var_stats.set("0/0")
@@ -152,15 +153,15 @@ def x_flow_panel(parent: _tk.Misc, **kwargs) -> tuple[_tk.Frame, _tk.Text]:
 
     wrapper = _ttk.Frame(parent)
     x_flow = _tk.Text(
-        wrapper,
-        state=_tk.DISABLED,
-        background=parent_background,
-        selectbackground=parent_background,
-        padx=0, pady=0,
-        cursor="arrow",
-        relief=_tk.FLAT,
-        wrap=_tk.WORD,
-        **kwargs
+            wrapper,
+            state=_tk.DISABLED,
+            background=parent_background,
+            selectbackground=parent_background,
+            padx=0, pady=0,
+            cursor="arrow",
+            relief=_tk.FLAT,
+            wrap=_tk.WORD,
+            **kwargs
     )
 
     x_flow.pack(side=_tk.TOP, anchor=_tk.CENTER, fill=_tk.BOTH, expand=True)
@@ -202,3 +203,42 @@ def toggle_button(master: _tk.Misc, buttongroup: str = None, **kwargs) -> Toggle
 
     # noinspection PyTypeChecker
     return button
+
+
+def create_toggle_buttons_panel(
+        frame: _tk.Widget,
+        labels: list[str],
+        target: Callable[[_tk.Event, bool], None] = None,
+        buttongroup: str = None,
+        **kwargs
+) -> tuple[_tk.Frame, list[Toggle]]:
+    o_idx = 0
+
+    columns = math.ceil(math.sqrt(len(labels)))
+    rows = math.ceil(len(labels) / columns)
+
+    frame_buttons = _tk.Frame(frame)
+    # frame_orientation_buttons.grid(row=10, column=0, sticky=_tk.NSEW)
+
+    toggles = []
+    for row in range(rows):
+        wrapper = _tk.Frame(frame_buttons)
+        wrapper.pack(side=_tk.TOP, expand=True, fill=_tk.BOTH)
+
+        for col in range(columns):
+            if o_idx >= len(labels):
+                break
+
+            toggle = toggle_button(
+                    wrapper,
+                    buttongroup=buttongroup,
+                    text=labels[o_idx],
+                    target=target
+            )
+
+            toggle.pack(side=_tk.LEFT, anchor=_tk.W, fill=_tk.BOTH, expand=True)
+            toggles.append(toggle)
+
+            o_idx += 1
+
+    return frame_buttons, toggles

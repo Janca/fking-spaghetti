@@ -1,5 +1,4 @@
 from fking.scrapers.gettyimages import GettyImages as _GettyImages
-from fking.scrapers.testimages import TestImages as _TestImages
 from fking.scrapers.imagescraper import IScraper as _IScraper
 
 __all__ = [
@@ -10,7 +9,6 @@ __all__ = [
 
 def get_all() -> dict[str, _IScraper]:
     return {
-        'Test Images': _TestImages(),
         'Getty Images': _GettyImages()
     }
 

@@ -36,10 +36,10 @@ class GettyImages(_IScraper):
         try:
             url = self.generate_query_url(search_query, _page)
             response = _requests.get(
-                url,
-                headers=_fknetwork.default_headers,
-                proxies=next_proxy,
-                timeout=_fkapp.context.image_download_timeout
+                    url,
+                    headers=_fknetwork.default_headers,
+                    proxies=next_proxy,
+                    timeout=_fkapp.context.image_download_timeout
             )
 
             if response.status_code != 200:
@@ -131,16 +131,10 @@ class GettyImages(_IScraper):
         label_sort_by = _ttk.Label(wrapper, text="Sort By")
         label_color_and_mood = _ttk.Label(wrapper, text="Color & Mood")
 
-        frame_orientations_wrapper = _tk.Frame(wrapper)
-        frame_orientations, x_flow_orientations = _fkwidgets.x_flow_panel(frame_orientations_wrapper, height=4)
-        for orientation in self._orientation_values:
-            x_flow_orientations.window_create(
-                _tk.INSERT,
-                window=_fkwidgets.toggle_button(x_flow_orientations, text=orientation)
-            )
-
-        x_flow_orientations.bind("<MouseWheel>", lambda event: "break")
-        frame_orientations.pack(side=_tk.LEFT, anchor=_tk.W, fill=_tk.BOTH, expand=True)
+        frame_orientations_wrapper, mood_toggles, = _fkwidgets.create_toggle_buttons_panel(
+                wrapper,
+                self._color_and_mood_values
+        )
 
         def update_sort_by(*args):
             current_idx = combobox_sort_by.current()
@@ -165,40 +159,31 @@ class GettyImages(_IScraper):
         wrapper.grid_rowconfigure(5, weight=0)
         frame_orientations_wrapper.grid(row=5, column=0, sticky=_tk.EW)
 
-        frame_styles_wrapper = _tk.Frame(wrapper)
-        frame_styles, x_flow_styles = _fkwidgets.x_flow_panel(frame_styles_wrapper, height=5)
-        for style in self._style_values:
-            x_flow_styles.window_create(
-                _tk.INSERT,
-                window=_fkwidgets.toggle_button(x_flow_styles, text=style)
-            )
-
-        x_flow_styles.bind("<MouseWheel>", lambda event: "break")
-        frame_styles.pack(side=_tk.LEFT, anchor=_tk.W, fill=_tk.BOTH, expand=True)
+        frame_styles_wrapper, styles_toggles = _fkwidgets.create_toggle_buttons_panel(wrapper, self._style_values)
 
         # _fkwidgets.section_divider(wrapper, pady=15).grid(row=6, column=0, sticky=_tk.NSEW)
         label_styles = _ttk.Label(wrapper, text="Styles")
-        label_styles.grid(row=6, column=0, sticky=_tk.NSEW)
+        label_styles.grid(row=6, column=0, sticky=_tk.NSEW, pady=(6, 0))
 
         frame_styles_wrapper.grid(row=7, column=0, sticky=_tk.EW)
 
         label_people = _ttk.Label(wrapper, text="People")
-        label_people.grid(row=8, column=0, sticky=_tk.NSEW)
+        label_people.grid(row=8, column=0, sticky=_tk.NSEW, pady=(6, 0))
 
         frame_people_buttons = _ttk.Frame(wrapper)
         frame_people_buttons.grid(row=9, column=0, sticky=_tk.NSEW)
 
         button_no_people = _fkwidgets.toggle_button(
-            frame_people_buttons,
-            buttongroup="configure_people",
-            text="None"
+                frame_people_buttons,
+                buttongroup="configure_people",
+                text="None"
         )
 
         button_no_people.toggle(True)
         button_configure_people = _fkwidgets.toggle_button(
-            frame_people_buttons,
-            buttongroup="configure_people",
-            text="One or More"
+                frame_people_buttons,
+                buttongroup="configure_people",
+                text="One or More"
         )
 
         def open_people_dialog():
@@ -265,6 +250,37 @@ class GettyImages(_IScraper):
                     frame_row.pack(side=_tk.TOP, expand=True, fill=_tk.X)
 
                 frame_age_wrapper.grid(row=3, column=0, sticky=_tk.NSEW)
+
+                composition_values = [
+                    "Candid", "Full Length",
+                    "Head Shot", "Looking At Camera",
+                    "Three Quarters", "Waist Up"
+                ]
+
+                label_compositions = _ttk.Label(parent, text="Composition")
+                label_compositions.grid(row=4, column=0, sticky=_tk.NSEW, pady=(6, 0))
+
+                frame_compositions_wrapper, composition_toggles = _fkwidgets.create_toggle_buttons_panel(
+                        parent,
+                        composition_values
+                )
+
+                frame_compositions_wrapper.grid(row=5, column=0, sticky=_tk.NSEW)
+
+                ethnicity_values = [
+                    "Black", "East Asian", "Middle Eastern", "Multiracial Group",
+                    "Pacific Islander", "Southeast Asian", "White", "Hispanic/Latinx",
+                    "Multiracial Person", "Native American/First Nation", "South Asian"
+                ]
+
+                frame_ethnicity_wrapper, ethnicity_toggles = _fkwidgets.create_toggle_buttons_panel(
+                        parent,
+                        ethnicity_values
+                )
+
+                label_ethnicity = _ttk.Label(parent, text="Ethnicity")
+                label_ethnicity.grid(row=6, column=0, pady=(6, 0), sticky=_tk.NSEW)
+                frame_ethnicity_wrapper.grid(row=7, column=0, sticky=_tk.NSEW)
 
                 return None
 
