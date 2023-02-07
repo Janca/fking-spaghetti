@@ -1,7 +1,7 @@
 import tkinter as _tk
 import tkinter.simpledialog as _tksimpledialog
 import tkinter.ttk as _ttk
-from typing import Optional
+from typing import List, Optional
 
 import bs4 as _bs4
 import requests as _requests
@@ -24,8 +24,19 @@ class GettyImages(_IScraper):
         "Portrait", "Sparse", "Still Life"
     ]
 
-    _sort_by = _sort_by_values[2]
-    _color_and_mood = _color_and_mood_values[0]
+    _no_of_people_values = ["One Person", "Two People", "Group of People"]
+    _age_values = [
+        "Baby", "Child", "Teenager", "Young Adult",
+        "Adult", "Adults Only", "Mature Adult",
+        "Senior Adult"
+    ]
+
+    _sort_by: str = _sort_by_values[2]
+    _color_and_mood: str = _color_and_mood_values[0]
+
+    _search_people: bool = False
+    _no_people: str = _no_of_people_values[0]
+    _age_people: list[str] = []
 
     def __init__(self) -> None:
         super().__init__("Getty Images")
@@ -133,7 +144,7 @@ class GettyImages(_IScraper):
 
         frame_orientations_wrapper, mood_toggles, = _fkwidgets.create_toggle_buttons_panel(
                 wrapper,
-                self._color_and_mood_values
+                self._orientation_values
         )
 
         def update_sort_by(*args):
@@ -198,104 +209,7 @@ class GettyImages(_IScraper):
         return wrapper
 
     def _show_people_preferences_dialog(self, master: _tk.Misc):
-        class __PrefDialog(_tksimpledialog.Dialog):
-            _button_ok: _tk.Button
-
-            def __init__(self, parent) -> None:
-                super().__init__(parent)
-
-            def body(self, parent: _tk.Frame) -> _tk.Misc | None:
-                self.resizable(None, None)
-
-                parent.grid_columnconfigure(0, minsize=256, weight=0)
-
-                label_no_people = _ttk.Label(parent, text="Number of People")
-                label_no_people.grid(row=0, column=0, sticky=_tk.NSEW)
-
-                no_of_people_values = ["One Person", "Two People", "Group of People"]
-                frame_no_people_wrapper = _tk.Frame(parent)
-
-                for i, no_people in enumerate(no_of_people_values):
-                    btn = _fkwidgets.toggle_button(frame_no_people_wrapper, buttongroup="no_people", text=no_people)
-                    btn.pack(side=_tk.LEFT, fill=_tk.X, expand=True)
-
-                    if i == 0:
-                        btn.toggle(True)
-
-                frame_no_people_wrapper.grid(row=1, column=0, sticky=_tk.NSEW)
-
-                label_age = _ttk.Label(parent, text="Age")
-                label_age.grid(row=2, column=0, sticky=_tk.NSEW, pady=(6, 0))
-
-                age_values = [
-                    "Baby", "Child", "Teenager", "Young Adult",
-                    "Adult", "Adults Only", "Mature Adult",
-                    "Senior Adult"
-                ]
-
-                idx = 0
-                frame_age_wrapper = _tk.Frame(parent)
-                for row in range(3):
-                    frame_row = _tk.Frame(frame_age_wrapper)
-                    for column in range(3):
-                        if idx >= len(age_values):
-                            break
-
-                        age_txt = age_values[idx]
-                        idx += 1
-
-                        btn = _fkwidgets.toggle_button(frame_row, text=age_txt)
-                        btn.pack(side=_tk.LEFT, anchor=_tk.W, expand=True, fill=_tk.BOTH)
-
-                    frame_row.pack(side=_tk.TOP, expand=True, fill=_tk.X)
-
-                frame_age_wrapper.grid(row=3, column=0, sticky=_tk.NSEW)
-
-                composition_values = [
-                    "Candid", "Full Length",
-                    "Head Shot", "Looking At Camera",
-                    "Three Quarters", "Waist Up"
-                ]
-
-                label_compositions = _ttk.Label(parent, text="Composition")
-                label_compositions.grid(row=4, column=0, sticky=_tk.NSEW, pady=(6, 0))
-
-                frame_compositions_wrapper, composition_toggles = _fkwidgets.create_toggle_buttons_panel(
-                        parent,
-                        composition_values
-                )
-
-                frame_compositions_wrapper.grid(row=5, column=0, sticky=_tk.NSEW)
-
-                ethnicity_values = [
-                    "Black", "East Asian", "Middle Eastern", "Multiracial Group",
-                    "Pacific Islander", "Southeast Asian", "White", "Hispanic/Latinx",
-                    "Multiracial Person", "Native American/First Nation", "South Asian"
-                ]
-
-                frame_ethnicity_wrapper, ethnicity_toggles = _fkwidgets.create_toggle_buttons_panel(
-                        parent,
-                        ethnicity_values
-                )
-
-                label_ethnicity = _ttk.Label(parent, text="Ethnicity")
-                label_ethnicity.grid(row=6, column=0, pady=(6, 0), sticky=_tk.NSEW)
-                frame_ethnicity_wrapper.grid(row=7, column=0, sticky=_tk.NSEW)
-
-                return None
-
-            def buttonbox(self) -> None:
-                frame = _ttk.Frame(self)
-
-                self._button_ok = _ttk.Button(frame, text="OK", width=16, command=self.__on_ok_button)
-                self._button_ok.grid(row=0, column=1, padx=(3, 0), pady=(0, 6))
-
-                frame.pack(side=_tk.RIGHT, padx=6, pady=0)
-
-            def __on_ok_button(self):
-                self.destroy()
-
-        __PrefDialog(master)
+        _PeoplePreferenceDialog(master, self)
 
     @staticmethod
     def _normalize_alt_text(alt_text: str) -> str:
@@ -307,3 +221,101 @@ class GettyImages(_IScraper):
                 tags_text = _alt_text
 
         return _fkutils.normalize_tags(tags_text)
+
+
+class _PeoplePreferenceDialog(_tksimpledialog.Dialog):
+    _button_ok: _tk.Button
+
+    def __init__(self, parent, getty: GettyImages) -> None:
+        self.getty = getty
+        super().__init__(parent)
+
+    def body(self, parent: _tk.Frame) -> Optional[_tk.Misc]:
+        self.resizable(None, None)
+
+        parent.grid_columnconfigure(0, minsize=256, weight=0)
+
+        label_no_people = _ttk.Label(parent, text="Number of People")
+        label_no_people.grid(row=0, column=0, sticky=_tk.NSEW)
+
+        frame_no_people_wrapper = _tk.Frame(parent)
+
+        def update_no_people(n_people: str):
+            self.getty._no_people = n_people
+
+        for i, no_people in enumerate(self.getty._no_of_people_values):
+            btn = _fkwidgets.toggle_button(frame_no_people_wrapper, buttongroup="no_people", text=no_people)
+            btn.pack(side=_tk.LEFT, fill=_tk.X, expand=True)
+            btn.bind("<<Selected>>", lambda e, n_people=no_people: update_no_people(n_people))
+
+            if i == 0:
+                btn.toggle(True)
+
+        frame_no_people_wrapper.grid(row=1, column=0, sticky=_tk.NSEW)
+
+        label_age = _ttk.Label(parent, text="Age")
+        label_age.grid(row=2, column=0, sticky=_tk.NSEW, pady=(6, 0))
+
+
+
+        idx = 0
+        frame_age_wrapper = _tk.Frame(parent)
+        for row in range(3):
+            frame_row = _tk.Frame(frame_age_wrapper)
+            for column in range(3):
+                if idx >= len(self.getty._age_values):
+                    break
+
+                age_txt = self.getty._age_values[idx]
+                idx += 1
+
+                btn = _fkwidgets.toggle_button(frame_row, text=age_txt)
+                btn.pack(side=_tk.LEFT, anchor=_tk.W, expand=True, fill=_tk.BOTH)
+
+            frame_row.pack(side=_tk.TOP, expand=True, fill=_tk.X)
+
+        frame_age_wrapper.grid(row=3, column=0, sticky=_tk.NSEW)
+
+        composition_values = [
+            "Candid", "Full Length",
+            "Head Shot", "Looking At Camera",
+            "Three Quarters", "Waist Up"
+        ]
+
+        label_compositions = _ttk.Label(parent, text="Composition")
+        label_compositions.grid(row=4, column=0, sticky=_tk.NSEW, pady=(6, 0))
+
+        frame_compositions_wrapper, composition_toggles = _fkwidgets.create_toggle_buttons_panel(
+                parent,
+                composition_values
+        )
+
+        frame_compositions_wrapper.grid(row=5, column=0, sticky=_tk.NSEW)
+
+        ethnicity_values = [
+            "Black", "East Asian", "Middle Eastern", "Multiracial Group",
+            "Pacific Islander", "Southeast Asian", "White", "Hispanic/Latinx",
+            "Multiracial Person", "Native American/First Nation", "South Asian"
+        ]
+
+        frame_ethnicity_wrapper, ethnicity_toggles = _fkwidgets.create_toggle_buttons_panel(
+                parent,
+                ethnicity_values
+        )
+
+        label_ethnicity = _ttk.Label(parent, text="Ethnicity")
+        label_ethnicity.grid(row=6, column=0, pady=(6, 0), sticky=_tk.NSEW)
+        frame_ethnicity_wrapper.grid(row=7, column=0, sticky=_tk.NSEW)
+
+        return None
+
+    def buttonbox(self) -> None:
+        frame = _ttk.Frame(self)
+
+        self._button_ok = _ttk.Button(frame, text="OK", width=16, command=self.__on_ok_button)
+        self._button_ok.grid(row=0, column=1, padx=(3, 0), pady=(12, 6))
+
+        frame.pack(side=_tk.RIGHT, padx=6, pady=0)
+
+    def __on_ok_button(self):
+        self.destroy()

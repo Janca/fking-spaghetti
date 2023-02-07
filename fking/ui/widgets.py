@@ -15,10 +15,15 @@ _TK = TypeVar("_TK", _tk.Widget, _tk.Frame)
 
 
 class Toggle(_ttk.Button, _ABC):
-    toggled: bool = False
+    _toggle: bool = False
 
     def toggle(self, selected: bool):
-        raise NotImplementedError()
+        self._toggle = selected
+        self.state(["pressed" if selected else "!pressed"])
+
+    @property
+    def toggled(self):
+        return self._toggle
 
 
 def create_browse_widget_group(
@@ -169,8 +174,8 @@ def x_flow_panel(parent: _tk.Misc, **kwargs) -> tuple[_tk.Frame, _tk.Text]:
 
 
 def toggle_button(master: _tk.Misc, buttongroup: str = None, **kwargs) -> Toggle:
-    button = _ttk.Button(master, **kwargs)
-    button.toggled = False
+    button = Toggle(master, **kwargs)
+    button.toggle(False)
 
     if buttongroup:
         if "buttongroups" not in master.__dict__:
@@ -182,24 +187,23 @@ def toggle_button(master: _tk.Misc, buttongroup: str = None, **kwargs) -> Toggle
 
     def do_toggle(*args):
         toggled = not button.toggled
+        print(button.toggled, toggled)
         button.toggle(toggled)
 
         if buttongroup:
             bg_buttons = master.buttongroups[buttongroup]
+            _toggled = not toggled
             for btn in bg_buttons:
                 if btn != button:
-                    toggle(btn, not toggled)
-                    btn.event_generate("<<Selected>>")
+                    btn.toggle(_toggled)
+                    btn.event_generate("<<Selected>>" if _toggled else "<<Deselected>>")
+                    btn.event_generate("<<Toggled>>")
 
-        button.event_generate("<<Selected>>")
+        button.event_generate("<<Selected>>" if toggled else "<<Deselected>>")
+        button.event_generate("<<Toggled>>")
         return "break"
 
-    def toggle(self: _ttk.Button, selected: bool):
-        self.toggled = selected
-        self.state(["pressed" if selected else "!pressed"])
-
     button.bind("<ButtonRelease-1>", do_toggle)
-    button.toggle = toggle.__get__(button)
 
     # noinspection PyTypeChecker
     return button
