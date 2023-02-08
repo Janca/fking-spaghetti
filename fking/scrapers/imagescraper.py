@@ -29,10 +29,10 @@ class ImageTask(_ITask):
 
         try:
             response = requests.get(
-                    self._url,
-                    headers=_fknetwork.default_headers,
-                    proxies=next_proxy,
-                    timeout=_fkapp.context.image_download_timeout
+                self._url,
+                headers=_fknetwork.default_headers,
+                proxies=next_proxy,
+                timeout=_fkapp.context.image_download_timeout
             )
 
             status_code = response.status_code
@@ -71,6 +71,15 @@ class ImageTask(_ITask):
         pass  # TODO increment download progress
 
 
+class ScraperResult:
+    has_next: bool
+    image_tasks: list[ImageTask]
+
+    def __init__(self, image_tasks: list[ImageTask], has_next: bool) -> None:
+        self.image_tasks = image_tasks
+        self.has_next = has_next
+
+
 class IScraper(_ABC):
     _name: str
 
@@ -78,7 +87,7 @@ class IScraper(_ABC):
         super().__init__()
         self._name = name
 
-    def query(self, query: str) -> list[ImageTask]:
+    def query(self, query: str, page: int) -> ScraperResult:
         raise NotImplementedError()
 
     def generate_query_url(self, search_term: str, page: int) -> str:

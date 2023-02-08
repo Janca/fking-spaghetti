@@ -1,7 +1,7 @@
 import tkinter as _tk
 import tkinter.simpledialog as _tksimpledialog
 import tkinter.ttk as _ttk
-from typing import List, Optional
+from typing import Optional
 
 import bs4 as _bs4
 import requests as _requests
@@ -11,12 +11,12 @@ import fking.network as _fknetwork
 import fking.ui.widgets as _fkwidgets
 import fking.utils as _fkutils
 from fking.scrapers.imagescraper import IScraper as _IScraper, \
-    ImageTask as _ImageTask
+    ImageTask as _ImageTask, ScraperResult as _ScraperResult
 
 
 class GettyImages(_IScraper):
     _sort_by_values = ["Best Match", "Newest", "Most Popular"]
-    _color_and_mood_values = ["Black & White", "Bold", "Cool", "Dramatic", "Natural", "Vivid", "Warm"]
+    _color_and_mood_values = ["All", "Black & White", "Bold", "Cool", "Dramatic", "Natural", "Vivid", "Warm"]
     _orientation_values = ["Vertical", "Horizontal", "Square", "Panoramic Horizontal", "Panoramic Vertical"]
     _style_values = [
         "Abstract", "Close-up", "Cut Out",
@@ -24,33 +24,53 @@ class GettyImages(_IScraper):
         "Portrait", "Sparse", "Still Life"
     ]
 
+    _no_people_dict = {
+        "One Person": "one",
+        "Two People": "two",
+        "Group of People": "group"
+    }
+
     _no_of_people_values = ["One Person", "Two People", "Group of People"]
-    _age_values = [
-        "Baby", "Child", "Teenager", "Young Adult",
-        "Adult", "Adults Only", "Mature Adult",
-        "Senior Adult"
-    ]
+
+    _ethnicity_dict = {
+        "Black": "black",
+        "East Asian": "eastasian",
+        "Middle Eastern": "middleeastern",
+        "Multiracial Group": "multiethnicgroup",
+        "Pacific Islander": "pacificislander",
+        "Southeast Asian": "southeastasian",
+        "White": "caucasian",
+        "Hispanic/Latinx": "hispaniclantino",
+        "Multiracial Person": "mixedraceperson",
+        "Native American/First Nation": "nativeamericanfirstnations",
+        "South Asian": "southasian"
+    }
 
     _sort_by: str = _sort_by_values[2]
     _color_and_mood: str = _color_and_mood_values[0]
 
+    _styles: list[str] = []
+    _orientations: list[str] = []
+
     _search_people: bool = False
     _no_people: str = _no_of_people_values[0]
     _age_people: list[str] = []
+    _compositions: list[str] = []
+    _ethnicities: list[str] = []
 
     def __init__(self) -> None:
         super().__init__("Getty Images")
 
-    def query(self, search_query: str, _page: int = 1, _current_length: int = 0) -> list[_ImageTask]:
+    def query(self, search_query: str, _page: int = 1) -> _ScraperResult:
         next_proxy = _fknetwork.next_proxy()
 
         try:
             url = self.generate_query_url(search_query, _page)
             response = _requests.get(
-                    url,
-                    headers=_fknetwork.default_headers,
-                    proxies=next_proxy,
-                    timeout=_fkapp.context.image_download_timeout
+                url,
+                headers=_fknetwork.default_headers,
+                proxies=next_proxy,
+                timeout=_fkapp.context.image_download_timeout
             )
 
             if response.status_code != 200:
@@ -61,20 +81,20 @@ class GettyImages(_IScraper):
 
             document_title = document_soup.find("h1")
             if document_title and document_title.text == "Oops! We can't find the page you are looking for.":
-                return []
+                return _ScraperResult([], False)
 
             image_tasks: list[_ImageTask] = []
             gallery_images = document_soup.find_all("img", {"class": "MosaicAsset-module__thumb___yvFP5"})
 
             def is_full() -> bool:
-                return _current_length + len(image_tasks) >= _fkapp.context.max_images_per_term
+                return len(image_tasks) >= _fkapp.context.max_images_per_term
 
             if gallery_images:
                 query_dirname = _fkutils.sanitize_dirname(search_query)
 
                 for gallery_image in gallery_images:
                     if is_full():
-                        return image_tasks
+                        return _ScraperResult(image_tasks, False)
 
                     image_url = gallery_image["src"]
                     image_alt_text = gallery_image["alt"]
@@ -86,12 +106,8 @@ class GettyImages(_IScraper):
             next_button_class = "PaginationRow-module__button___QQbMu PaginationRow-module__nextButton___gH3HZ"
             next_button = document_soup.find("button", {"class": next_button_class})
 
-            if next_button and _page < _fkapp.context.max_pages_per_term and not is_full():
-                child_image_tasks = self.query(search_query, _page + 1, _current_length + len(image_tasks))
-                if child_image_tasks:
-                    image_tasks.extend(child_image_tasks)
-
-            return image_tasks
+            has_next = next_button and not is_full()
+            return _ScraperResult(image_tasks, has_next)
 
         except (_requests.exceptions.ProxyError, _requests.exceptions.ConnectTimeout) as e:
             _fknetwork.mark_bad_proxy(next_proxy)
@@ -112,7 +128,6 @@ class GettyImages(_IScraper):
               f"&family=creative" \
               f"&phrase={phrase_term}" \
               f"&sort={sort_by}" \
-              f"&numberofpeople=none" \
               f"&page={page}"
 
         color_and_mood = self._color_and_mood.lower()
@@ -124,7 +139,32 @@ class GettyImages(_IScraper):
             color_and_mood = 'moody'
         elif color_and_mood == 'black & white':
             color_and_mood = 'bandw'
-        url += f"&mood={color_and_mood}"
+
+        if color_and_mood != "all":
+            url += f"&mood={color_and_mood}"
+
+        compositions = []
+        if len(self._orientations) > 0:
+            url += f"&orientations={_fkutils.url_encode(','.join([o.replace(' ', '').lower() for o in self._orientations]))}"
+        if len(self._styles) > 0:
+            compositions.extend(self._styles)
+
+        if self._search_people:
+            url += f"&numberofpeople={self._no_people_dict[self._no_people]}"
+            if len(self._age_people) > 0:
+                url += f"&ageofpeople={_fkutils.url_encode(','.join([it.replace(' ', '').lower() for it in self._age_people]))}"
+            if len(self._compositions) > 0:
+                compositions.extend(self._compositions)
+            if len(self._ethnicities) > 0:
+                ethnicities = []
+                for e in self._ethnicities:
+                    ethnicities.append(self._ethnicity_dict[e])
+                url += f"&ethnicity={_fkutils.url_encode(','.join(ethnicities))}"
+        else:
+            url += "&numberofpeople=none"
+
+        if len(compositions) > 0:
+            url += f"&compositions={_fkutils.url_encode(','.join([c.replace(' ', '').replace('-', '').lower() for c in compositions]))}"
 
         return url
 
@@ -142,10 +182,11 @@ class GettyImages(_IScraper):
         label_sort_by = _ttk.Label(wrapper, text="Sort By")
         label_color_and_mood = _ttk.Label(wrapper, text="Color & Mood")
 
-        frame_orientations_wrapper, mood_toggles, = _fkwidgets.create_toggle_buttons_panel(
-                wrapper,
-                self._orientation_values
-        )
+        frame_orientations_wrapper, \
+            orientation_toggles, = _fkwidgets.create_toggle_buttons_panel(wrapper, self._orientation_values)
+        for o_toggle in orientation_toggles:
+            o_toggle.bind("<<Selected>>", lambda e, key=o_toggle.cget("text"): self._orientations.append(key))
+            o_toggle.bind("<<Deselected>>", lambda e, key=o_toggle.cget("text"): self._orientations.remove(key))
 
         def update_sort_by(*args):
             current_idx = combobox_sort_by.current()
@@ -171,6 +212,9 @@ class GettyImages(_IScraper):
         frame_orientations_wrapper.grid(row=5, column=0, sticky=_tk.EW)
 
         frame_styles_wrapper, styles_toggles = _fkwidgets.create_toggle_buttons_panel(wrapper, self._style_values)
+        for style_toggle in styles_toggles:
+            style_toggle.bind("<<Selected>>", lambda e, key=style_toggle.cget("text"): self._styles.append(key))
+            style_toggle.bind("<<Deselected>>", lambda e, key=style_toggle.cget("text"): self._styles.remove(key))
 
         # _fkwidgets.section_divider(wrapper, pady=15).grid(row=6, column=0, sticky=_tk.NSEW)
         label_styles = _ttk.Label(wrapper, text="Styles")
@@ -185,23 +229,31 @@ class GettyImages(_IScraper):
         frame_people_buttons.grid(row=9, column=0, sticky=_tk.NSEW)
 
         button_no_people = _fkwidgets.toggle_button(
-                frame_people_buttons,
-                buttongroup="configure_people",
-                text="None"
+            frame_people_buttons,
+            buttongroup="configure_people",
+            text="None"
         )
 
         button_no_people.toggle(True)
         button_configure_people = _fkwidgets.toggle_button(
-                frame_people_buttons,
-                buttongroup="configure_people",
-                text="One or More"
+            frame_people_buttons,
+            buttongroup="configure_people",
+            text="One or More"
         )
 
-        def open_people_dialog():
-            if button_configure_people.toggled:
-                self._show_people_preferences_dialog(wrapper)
+        def enable_people_search():
+            self._search_people = True
+            self._show_people_preferences_dialog(wrapper)
 
-        button_configure_people.bind("<<Selected>>", lambda e: open_people_dialog())
+        def disable_people_search():
+            self._search_people = False
+            self._no_people = self._no_of_people_values[0]
+            self._age_people.clear()
+            self._compositions.clear()
+            self._ethnicities.clear()
+
+        button_configure_people.bind("<<Selected>>", lambda e: enable_people_search())
+        button_configure_people.bind("<<Deselected>>", lambda e: disable_people_search())
 
         button_no_people.pack(side=_tk.LEFT, expand=True, fill=_tk.X)
         button_configure_people.pack(side=_tk.LEFT, expand=True, fill=_tk.X)
@@ -223,6 +275,7 @@ class GettyImages(_IScraper):
         return _fkutils.normalize_tags(tags_text)
 
 
+# noinspection PyProtectedMember
 class _PeoplePreferenceDialog(_tksimpledialog.Dialog):
     _button_ok: _tk.Button
 
@@ -243,7 +296,8 @@ class _PeoplePreferenceDialog(_tksimpledialog.Dialog):
         def update_no_people(n_people: str):
             self.getty._no_people = n_people
 
-        for i, no_people in enumerate(self.getty._no_of_people_values):
+        no_peoples = list(self.getty._no_people_dict.keys())
+        for i, no_people in enumerate(no_peoples):
             btn = _fkwidgets.toggle_button(frame_no_people_wrapper, buttongroup="no_people", text=no_people)
             btn.pack(side=_tk.LEFT, fill=_tk.X, expand=True)
             btn.bind("<<Selected>>", lambda e, n_people=no_people: update_no_people(n_people))
@@ -256,23 +310,16 @@ class _PeoplePreferenceDialog(_tksimpledialog.Dialog):
         label_age = _ttk.Label(parent, text="Age")
         label_age.grid(row=2, column=0, sticky=_tk.NSEW, pady=(6, 0))
 
+        age_values = [
+            "Baby", "Child", "Teenager", "Young Adult",
+            "Adult", "Adults Only", "Mature Adult",
+            "Senior Adult"
+        ]
 
-
-        idx = 0
-        frame_age_wrapper = _tk.Frame(parent)
-        for row in range(3):
-            frame_row = _tk.Frame(frame_age_wrapper)
-            for column in range(3):
-                if idx >= len(self.getty._age_values):
-                    break
-
-                age_txt = self.getty._age_values[idx]
-                idx += 1
-
-                btn = _fkwidgets.toggle_button(frame_row, text=age_txt)
-                btn.pack(side=_tk.LEFT, anchor=_tk.W, expand=True, fill=_tk.BOTH)
-
-            frame_row.pack(side=_tk.TOP, expand=True, fill=_tk.X)
+        frame_age_wrapper, age_toggles = _fkwidgets.create_toggle_buttons_panel(parent, age_values)
+        for age_toggle in age_toggles:
+            age_toggle.bind("<<Selected>>", lambda e, key=age_toggle.cget("text"): self.getty._age_people.append(key))
+            age_toggle.bind("<<Deselected>>", lambda e, key=age_toggle.cget("text"): self.getty._age_people.remove(key))
 
         frame_age_wrapper.grid(row=3, column=0, sticky=_tk.NSEW)
 
@@ -285,26 +332,37 @@ class _PeoplePreferenceDialog(_tksimpledialog.Dialog):
         label_compositions = _ttk.Label(parent, text="Composition")
         label_compositions.grid(row=4, column=0, sticky=_tk.NSEW, pady=(6, 0))
 
-        frame_compositions_wrapper, composition_toggles = _fkwidgets.create_toggle_buttons_panel(
-                parent,
-                composition_values
-        )
+        frame_comp_wrapper, composition_toggles = _fkwidgets.create_toggle_buttons_panel(parent, composition_values)
+        for comp_toggle in composition_toggles:
+            comp_toggle.bind(
+                "<<Selected>>",
+                lambda e, key=comp_toggle.cget("text"): self.getty._compositions.append(key)
+            )
 
-        frame_compositions_wrapper.grid(row=5, column=0, sticky=_tk.NSEW)
+            comp_toggle.bind(
+                "<<Deselected>>",
+                lambda e, key=comp_toggle.cget("text"): self.getty._compositions.remove(key)
+            )
 
-        ethnicity_values = [
-            "Black", "East Asian", "Middle Eastern", "Multiracial Group",
-            "Pacific Islander", "Southeast Asian", "White", "Hispanic/Latinx",
-            "Multiracial Person", "Native American/First Nation", "South Asian"
-        ]
+        frame_comp_wrapper.grid(row=5, column=0, sticky=_tk.NSEW)
 
-        frame_ethnicity_wrapper, ethnicity_toggles = _fkwidgets.create_toggle_buttons_panel(
-                parent,
-                ethnicity_values
-        )
+        ethnicity_values = list(self.getty._ethnicity_dict.keys())
 
         label_ethnicity = _ttk.Label(parent, text="Ethnicity")
         label_ethnicity.grid(row=6, column=0, pady=(6, 0), sticky=_tk.NSEW)
+
+        frame_ethnicity_wrapper, ethnicity_toggles = _fkwidgets.create_toggle_buttons_panel(parent, ethnicity_values)
+        for ethnicity_toggle in ethnicity_toggles:
+            ethnicity_toggle.bind(
+                "<<Selected>>",
+                lambda e, key=ethnicity_toggle.cget("text"): self.getty._ethnicities.append(key)
+            )
+
+            ethnicity_toggle.bind(
+                "<<Deselected>>",
+                lambda e, key=ethnicity_toggle.cget("text"): self.getty._ethnicities.remove(key)
+            )
+
         frame_ethnicity_wrapper.grid(row=7, column=0, sticky=_tk.NSEW)
 
         return None
@@ -318,4 +376,5 @@ class _PeoplePreferenceDialog(_tksimpledialog.Dialog):
         frame.pack(side=_tk.RIGHT, padx=6, pady=0)
 
     def __on_ok_button(self):
+        print(self.getty.generate_query_url("kitten", 1))
         self.destroy()

@@ -1,6 +1,5 @@
 import datetime
 import os.path
-import sys
 import tkinter as _tk
 import tkinter.ttk as _ttk
 
@@ -106,16 +105,16 @@ def show():
     frame_progress, update_progress_image_downloads, \
         update_progress_search_queries = _fkframes.create_progress_frame(tk_frame)
 
-    def increment_image_downloads(v: int = 1):
+    def increment_image_downloads(e, v: int = 1):
         pass
 
-    def increment_image_downloads_total(v: int = 1):
+    def increment_image_downloads_total(e, v: int = 1):
         pass
 
-    def increment_search_terms(v: int = 1):
+    def increment_search_terms(e, v: int = 1):
         pass
 
-    def increment_search_terms_total(v: int = 0):
+    def increment_search_terms_total(e, v: int = 0):
         pass
 
     def reset_progress():
