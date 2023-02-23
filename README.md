@@ -25,8 +25,12 @@ palm trees
 ```
 
 ## Status
-Well, it works... there are some bugs for sure. A major rewrite is in the near future, but I like to get the idea working,
-and then fix... maybe. Please open issues for any bug you may find, and check back often.
+Well, it's been rewritten, I hope the pythonic gods can forgive me for what I've done. 
+Please open issues for any bug you may find, and check back often.
+
+### Custom Scraping Source
+Want to scrape your own location? Implement `fking.scrapers.IScraper` yourself, and you could (*potentially*) scrape
+from anywhere.
 
 ### Feature Ideas
 
@@ -57,6 +61,6 @@ A few examples of the UI on Windows 11.
 ![A preview image of the UI](/.github/ui-1.png)
 
 
-**Busy**
+**GettyImages Source**
 
 ![A preview image of the UI busy](/.github/ui-2.png)
