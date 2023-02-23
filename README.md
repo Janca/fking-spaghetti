@@ -12,6 +12,7 @@ See the [pretty UI here](#ui-example).
 ## How to use
 Clone git repo and run main.
 ```commandline
+pip install -r requirements.txt
 py main.py
 ```
 
