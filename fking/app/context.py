@@ -4,8 +4,11 @@ import threading
 from dataclasses import dataclass as _dataclass
 from typing import Optional as _Optional
 
+import requests as _requests
+
 import fking.queues as _fkqueues
 import fking.scrapers.imagescraper as _fkscrapers
+import fking.ui as _fkui
 
 
 @_dataclass
@@ -69,26 +72,94 @@ class _FkSpaghetti:
             if thread.is_alive():
                 raise RuntimeError("Scraper thread is busy.")
 
-            def scraper_thread_fn():
-                self.scraper_active = True
+        def scraper_thread_fn():
+            self.worker_queue_interrupted = False
+            self.scraper_active = True
 
-                _fkqueues.shutdown()
-                _fkqueues.start_thread_pool()
+            _fkui.fire(_fkui.SCRAPER_STARTED)
 
-                current_search_term_idx = 0
+            _fkqueues.shutdown()
+            _fkqueues.start_thread_pool()
 
-                queries_term = self.read_query_terms()
-                queries_length = len(queries_term)
+            current_search_term_idx = 0
 
-                while self.scraper_active:
-                    if current_search_term_idx >= queries_length:
+            queries_term = self.read_query_terms()
+            for term in queries_term:
+                _fkui.fire(_fkui.EVENT_SEARCH_TERM_ADDED, term=term)
+
+            queries_length = len(queries_term)
+
+            scraper = self.active_scraper
+
+            while self.scraper_active and not self.worker_queue_interrupted:
+                if current_search_term_idx >= queries_length:
+                    break
+
+                current_search_term_page = 1
+                current_search_term = queries_term[current_search_term_idx]
+
+                attempts = 1
+
+                while current_search_term_page <= self.max_pages_per_term and self.scraper_active \
+                        and not self.worker_queue_interrupted:
+
+                    _fkui.fire(
+                        _fkui.EVENT_STATUS_BAR_TEXT,
+                        text=f"Querying '{current_search_term}' - page {current_search_term_page}"
+                    )
+
+                    try:
+                        result = scraper.query(current_search_term, current_search_term_page)
+                        image_tasks = result.image_tasks
+
+                        for task in image_tasks:
+                            _fkui.fire(_fkui.EVENT_DOWNLOAD_TASK_ADDED)
+                            _fkqueues.queue_task(task)
+
+                        current_search_term_page += 1
+
+                        if not result.has_next:
+                            break
+
+                    except (_requests.exceptions.ProxyError, _requests.exceptions.ConnectTimeout):
+                        attempts += 1
+                        if attempts > self.max_attempts:
+                            break
+
+                    except IOError:
                         break
 
-                    current_search_term = queries_term[current_search_term_idx]
-                    image_tasks = self.active_scraper.query(current_search_term)
+                    except KeyboardInterrupt:
+                        self.worker_queue_interrupted = True
+                        _fkqueues.shutdown()
+                        break
 
+                current_search_term_idx += 1
+                _fkui.fire(_fkui.EVENT_SEARCH_TERM_COMPLETE, term=current_search_term)
 
-                    current_search_term_idx += 1
+            if self.worker_queue_interrupted:
+                _fkui.fire(_fkui.SCRAPER_INTERRUPTED)
+
+            _fkui.fire(
+                _fkui.EVENT_STATUS_BAR_TEXT,
+                text=f"Waiting on queue..."
+            )
+
+            #
+            # Wait for queue to finish
+            # ==========================
+            # while _fkqueues.is_busy():
+            #     time.sleep(1)
+
+            _fkqueues.shutdown()
+            self.scraper_active = False
+
+            _fkui.fire(
+                _fkui.EVENT_STATUS_BAR_TEXT,
+                text=f"Complete"
+            )
+
+            _fkui.fire(_fkui.SCRAPER_COMPLETE)
 
         self._scraper_thread = threading.Thread(target=scraper_thread_fn, daemon=True)
         self._scraper_thread.start()

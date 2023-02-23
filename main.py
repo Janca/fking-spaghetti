@@ -1,5 +1,4 @@
-import fking.legacy.proxies
-import fking.legacy.ui
+import fking.ui
 
-fking.legacy.proxies.load_proxies()
-fking.legacy.ui.show_ui()
+if __name__ == "__main__":
+    fking.ui.show()

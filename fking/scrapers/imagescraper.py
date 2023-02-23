@@ -7,8 +7,11 @@ import requests
 
 import fking.app as _fkapp
 import fking.network as _fknetwork
+import fking.ui as _fkui
 import fking.utils as _fkutils
 from fking.queues import ITask as _ITask
+
+debug_mode = False
 
 
 class ImageTask(_ITask):
@@ -25,6 +28,9 @@ class ImageTask(_ITask):
         self._caption_text = caption_text
 
     def execute(self):
+        if debug_mode:
+            return
+
         next_proxy = _fknetwork.next_proxy()
 
         try:
@@ -68,14 +74,16 @@ class ImageTask(_ITask):
         _fkutils.write_text(text_filepath, self._caption_text)
 
     def after(self):
-        pass  # TODO increment download progress
+        _fkui.fire(_fkui.EVENT_DOWNLOAD_TASK_COMPLETE)
 
 
 class ScraperResult:
     has_next: bool
+    next_page_url: str
     image_tasks: list[ImageTask]
 
-    def __init__(self, image_tasks: list[ImageTask], has_next: bool) -> None:
+    def __init__(self, image_tasks: list[ImageTask], has_next: bool, next_page_url: Optional[str] = None) -> None:
+        self.next_page_url = next_page_url
         self.image_tasks = image_tasks
         self.has_next = has_next
 

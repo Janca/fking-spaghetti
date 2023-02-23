@@ -33,28 +33,38 @@ class _TaskFn(ITask):
 
 _shutdown: bool = False
 _thread_workers: list[_threading.Thread] = []
-_task_queue: _queue.Queue[ITask] = _queue.Queue()
+_task_queue: _queue.Queue[ITask] = None
 
 
 def _task_thread_fn():
-    while not _fkapp.worker_queue_interrupted and not _shutdown:
+    while not _fkapp.context.worker_queue_interrupted:
         try:
             next_task = _task_queue.get(block=True, timeout=5)
+
         except _queue.Empty:
+            if _shutdown:
+                break
+
             continue
 
         try:
             next_task.active = True
             next_task.execute()
             next_task.after()
+
         except Exception as e:
-            if next_task.attempts < _fkapp.worker_task_max_attempts:
+            if next_task.attempts < _fkapp.context.worker_task_max_attempts:
                 next_task.attempts += 1
                 _task_queue.put(next_task)
             else:
                 next_task.failure(e)
+
         finally:
             next_task.active = False
+
+
+def is_busy() -> bool:
+    return not _task_queue.empty()
 
 
 def get_active_workers() -> list[_threading.Thread]:
@@ -71,10 +81,12 @@ def purge_inactive_workers() -> list[_threading.Thread]:
 
 
 def start_thread_pool():
-    global _shutdown
+    global _shutdown, _task_queue
 
     _shutdown = False
-    max_workers = _fkapp.max_queue_workers
+
+    _task_queue = _queue.Queue()
+    max_workers = _fkapp.context.max_queue_workers
     active_workers = purge_inactive_workers()
     worker_diff = max_workers - len(active_workers)
 
@@ -87,8 +99,16 @@ def start_thread_pool():
         thread.start()
 
 
-def shutdown():
+def shutdown(clear: bool = False):
     global _shutdown
+
+    if clear and _task_queue:
+        _fkapp.context.worker_queue_interrupted = True
+
+        with _task_queue.mutex:
+            _task_queue.queue.clear()
+            _task_queue.all_tasks_done.notify_all()
+            _task_queue.unfinished_tasks = 0
 
     _shutdown = True
     wait_on_queue()

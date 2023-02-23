@@ -25,6 +25,7 @@ def load_proxies(path: _Optional[str] = None) -> list[str]:
                 if key and key not in _proxies:
                     _proxies[key] = -1
 
+    print(f"Loading {len(_proxies)} proxies...")
     return list(_proxies.keys())
 
 

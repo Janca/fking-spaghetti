@@ -36,7 +36,6 @@ def process_queue():
             break
 
         event_type, args, kwargs = event
-
         if event_type in _listeners:
             for listener in _listeners[event_type]:
                 processed += 1
@@ -44,7 +43,7 @@ def process_queue():
                 try:
                     listener(*args, **kwargs)
                 except Exception as e:
-                    fire("<<EventException>>", event, e)
+                    fire("<<EventException>>", event, exception=e)
 
 
 def start_tkinter_event_bus(tk: _tk.Misc):
